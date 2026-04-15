@@ -25,19 +25,17 @@ jobs:
 
       - name: Install dependencies
         run: npm install --legacy-peer-deps
-      - name: Run ESLint (solo reglas obsidian)
+
+      - name: Run ESLint (reglas obsidianmd via config)
         id: eslint
         run: |
           set +e
-          npx eslint src --rule 'obsidian/no-constructor-dep: error' \
-                         --rule 'obsidian/no-deprecated-components: error' \
-                         -f json -o eslint-report.json
+          npx eslint . -f json -o eslint-report.json
           EXIT_CODE=$?
           echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
           set -e
           exit $EXIT_CODE
 
-      # Sube el reporte como artefacto para que el job siguiente lo lea
       - name: Upload ESLint report
         if: failure()
         uses: actions/upload-artifact@v4
@@ -68,13 +66,7 @@ jobs:
           name: eslint-report-dev
 
       - name: Format lint report as markdown
-        id: format
         run: |
-          COMMIT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
-          BRANCH="${{ github.ref_name }}"
-          ACTOR="${{ github.actor }}"
-          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
           python3 - <<'EOF'
           import json, os
 
@@ -84,12 +76,12 @@ jobs:
           lines = []
           lines.append("## Incompatibilidad detectada por ESLint (Obsidian plugin)")
           lines.append("")
-          lines.append(f"| Campo | Valor |")
-          lines.append(f"|---|---|")
-          lines.append(f"| **Rama** | `" + os.environ.get('BRANCH','') + "` |")
-          lines.append(f"| **Commit** | `" + os.environ.get('COMMIT_SHA','') + "` |")
-          lines.append(f"| **Autor** | @" + os.environ.get('ACTOR','') + " |")
-          lines.append(f"| **Workflow run** | [Ver logs](" + os.environ.get('RUN_URL','') + ") |")
+          lines.append("| Campo | Valor |")
+          lines.append("|---|---|")
+          lines.append("| **Rama** | `" + os.environ.get('BRANCH','') + "` |")
+          lines.append("| **Commit** | `" + os.environ.get('COMMIT_SHA','') + "` |")
+          lines.append("| **Autor** | @" + os.environ.get('ACTOR','') + " |")
+          lines.append("| **Workflow run** | [Ver logs](" + os.environ.get('RUN_URL','') + ") |")
           lines.append("")
           lines.append("### Errores encontrados")
           lines.append("")
@@ -98,10 +90,10 @@ jobs:
           for file_result in data:
               rel_path = file_result["filePath"].replace(os.getcwd(), "").lstrip("/")
               for msg in file_result.get("messages", []):
-                  if msg.get("severity", 0) >= 2:  # solo errors
+                  if msg.get("severity", 0) >= 2:
                       rule = msg.get("ruleId", "unknown")
-                      if rule and rule.startswith("obsidian/"):
-                          lines.append(f"- `{rel_path}` **L{msg['line']}:{msg['column']}** — `{rule}`")
+                      if rule and "obsidian" in rule.lower():
+                          lines.append(f"- `{rel_path}` **L{msg['line']}:{msg['column']}** - `{rule}`")
                           lines.append(f"  > {msg['message']}")
                           lines.append("")
                           total += 1
@@ -111,7 +103,7 @@ jobs:
 
           lines.append("")
           lines.append("---")
-          lines.append("> Este issue fue creado automáticamente por el workflow de lint. Corrige los errores y vuelve a hacer push a `dev`.")
+          lines.append("> Issue creado automaticamente. Corrige los errores y vuelve a hacer push a `dev`.")
 
           with open("issue-body.md", "w") as out:
               out.write("\n".join(lines))
@@ -157,15 +149,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      # 1) Bump version patch y añadir sufijo -dev => 0.0.1-dev, 0.0.2-dev, etc.
       - name: Bump prerelease version
         id: bump
         run: |
-          # Sube el patch en package.json sin tag git (ej: 0.0.1 -> 0.0.2)
           BASE_VERSION=$(npm version patch --no-git-tag-version)
           BASE_VERSION=${BASE_VERSION#v}
           NEW_VERSION="${BASE_VERSION}-dev"
-          # Sobrescribe package.json con la version -dev
           node -e "
           const fs = require('fs');
           const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
@@ -174,44 +163,36 @@ jobs:
           "
           echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
 
-      # 2) Sincronizar manifest.json con la nueva version
       - name: Sync version to manifest.json
         run: |
           VERSION=${{ steps.bump.outputs.version }}
           jq ".version = \"${VERSION}\"" manifest.json > manifest.tmp.json
           mv manifest.tmp.json manifest.json
 
-      # 3) Commit de version
       - name: Commit version bump
         run: |
           VERSION=${{ steps.bump.outputs.version }}
           git add package.json package-lock.json manifest.json || true
           git commit -m "chore: bump dev version to ${VERSION}" || echo "No changes to commit"
 
-      # 4) Tag (borra el tag local y remoto si ya existe, luego lo recrea)
       - name: Create tag
         run: |
           VERSION=${{ steps.bump.outputs.version }}
           TAG="${VERSION}"
-          # Si ya existe localmente, borralo
           if git rev-parse "${TAG}" >/dev/null 2>&1; then
             git tag -d "${TAG}"
           fi
-          # Si ya existe en remoto, borralo
           if git ls-remote --tags origin "${TAG}" | grep "${TAG}" >/dev/null 2>&1; then
             git push origin ":refs/tags/${TAG}"
           fi
-          # Crear y pushear el tag limpio
           git tag "${TAG}"
           git push origin "${TAG}"
 
-      # 5) Build plugin
       - name: Build plugin
         run: |
           npm install
           npm run build
 
-      # 6) Crear prerelease en GitHub
       - name: Create GitHub prerelease
         uses: softprops/action-gh-release@v2
         with:
