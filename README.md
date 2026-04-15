@@ -1,7 +1,7 @@
 # OPSE for Obsidian One Page Solo Engine / OPSE para Obsidian 
 
 [![Obsidian](https://img.shields.io/badge/Obsidian-Plugin-7C3AED?logo=obsidian)](https://obsidian.md/plugins)
-[![version](https://img.shields.io/badge/version-1.4.0-blue.svg)](https://github.com/snifer/opse-oracle-ttrpg/releases)
+[![version](https://img.shields.io/badge/version-0.0.1-blue.svg)](https://github.com/snifer/opse-oracle-ttrpg/releases)
 [![license](https://img.shields.io/badge/license-0--BSD-green.svg)](LICENSE)
 ![GitHub Downloads](https://img.shields.io/github/downloads/Snifer/opse-oracle-ttrpg/total?logo)
 
