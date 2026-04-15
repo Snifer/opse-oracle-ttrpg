@@ -61,8 +61,9 @@ jobs:
       - name: Create tag
         run: |
           VERSION=${{ steps.bump.outputs.version }}
-          git tag "v${VERSION}"
-          git push origin dev --tags
+          TAG="v${VERSION}"
+          git tag "${TAG}"
+          git push origin "${TAG}" 
 
       # 5) Build plugin (ajusta el comando a tu setup real)
       - name: Build plugin
