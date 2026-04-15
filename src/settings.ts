@@ -17,7 +17,7 @@ export class OPSESettingTab extends PluginSettingTab {
 
         const strings = t().SETTINGS;
 
-        containerEl.createEl('h2', { text: strings.TITLE });
+        new Setting(containerEl).setName(strings.TITLE).setHeading();
 
         new Setting(containerEl)
             .setName(strings.LANGUAGE)
@@ -56,7 +56,7 @@ export class OPSESettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        containerEl.createEl('h3', { text: 'Gestión de Datos' });
+        new Setting(containerEl).setName('Gestión de datos').setHeading();
 
         new Setting(containerEl)
             .setName('Límite de historial')

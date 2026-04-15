@@ -34,7 +34,7 @@ export class OracleCommands {
 
         plugin.addCommand({
             id: 'opse-roll-beat-move',
-            name: 'OPSE: Beat Move',
+            name: 'OPSE: Beat move',
             callback: async () => {
                 const roll = Random.d(6);
                 const content = OPSE.getBeatMove(roll - 1);
@@ -56,7 +56,7 @@ export class OracleCommands {
 
         plugin.addCommand({
             id: 'opse-roll-failure-move',
-            name: 'OPSE: Failure Move',
+            name: 'OPSE: Failure move',
             callback: async () => {
                 const roll = Random.d(6);
                 const content = OPSE.getFailureMove(roll - 1);
@@ -78,7 +78,7 @@ export class OracleCommands {
         
         plugin.addCommand({
             id: 'opse-focus-action',
-            name: 'OPSE: Action Focus',
+            name: 'OPSE: Action focus',
             callback: async () => {
                 const focus = Random.drawFocus(plugin.settings.randomMode, plugin.deck);
                 const content = OPSE.getAction(focus.rank);
@@ -107,7 +107,7 @@ export class OracleCommands {
 
         plugin.addCommand({
             id: 'opse-focus-detail',
-            name: 'OPSE: Detail Focus',
+            name: 'OPSE: Detail focus',
             callback: async () => {
                 const focus = Random.drawFocus(plugin.settings.randomMode, plugin.deck);
                 const content = OPSE.getDetail(focus.rank);
@@ -136,7 +136,7 @@ export class OracleCommands {
 
         plugin.addCommand({
             id: 'opse-focus-double',
-            name: 'OPSE: Foco Doble (Acción + Detalle)',
+            name: 'OPSE: Foco doble (acción + detalle)',
             callback: async () => {
                 const focus1 = Random.drawFocus(plugin.settings.randomMode, plugin.deck);
                 const focus2 = Random.drawFocus(plugin.settings.randomMode, plugin.deck);

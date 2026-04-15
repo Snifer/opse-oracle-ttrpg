@@ -18,22 +18,22 @@ export class HexModal extends Modal {
 
     onOpen() {
         const { contentEl } = this;
-        contentEl.createEl('h2', { text: "Hex Exploration" });
+        contentEl.createEl('h2', { text: "Hex exploration" });
 
         new Setting(contentEl)
             .setName(t().ADVENTURE.TITLE)
             .addText(text => text.setValue(this.name).onChange(value => this.name = value));
 
         new Setting(contentEl)
-            .setName("Common Terrain")
+            .setName("Common terrain")
             .addText(text => text.setValue(this.common).onChange(value => this.common = value));
 
         new Setting(contentEl)
-            .setName("Uncommon Terrain")
+            .setName("Uncommon terrain")
             .addText(text => text.setValue(this.uncommon).onChange(value => this.uncommon = value));
 
         new Setting(contentEl)
-            .setName("Rare Terrain")
+            .setName("Rare terrain")
             .addText(text => text.setValue(this.rare).onChange(value => this.rare = value));
 
         new Setting(contentEl)

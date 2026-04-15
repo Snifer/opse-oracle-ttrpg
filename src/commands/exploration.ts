@@ -51,7 +51,7 @@ export class ExplorationCommands {
 
         plugin.addCommand({
             id: 'opse-explore-hex',
-            name: 'Moverse al Norte (Región Hex)',
+            name: 'Moverse al norte (Región hex)',
             callback: async () => {
                 const active = plugin.adventureManager.getActiveAdventure();
                 if (active && active.regionId) {
@@ -59,7 +59,7 @@ export class ExplorationCommands {
                     if (region) {
                         HexManager.moveToNeighbor(region, 'N');
                         await plugin.saveSettings();
-                        new Notice(`Desplazado al Norte.`);
+                        new Notice(`Desplazado al norte.`);
                         const leaf = plugin.app.workspace.getLeavesOfType(VIEW_TYPE_OPSE_EXPLORATION)[0];
                         if (leaf) (leaf.view as any).refresh();
                     }

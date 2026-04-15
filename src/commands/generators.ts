@@ -11,7 +11,7 @@ export class GeneratorCommands {
 
         plugin.addCommand({
             id: 'opse-random-event',
-            name: 'OPSE: Random Event',
+            name: 'OPSE: Random event',
             callback: async () => {
                 const focus1 = Random.drawFocus(plugin.settings.randomMode, plugin.deck);
                 const focus2 = Random.drawFocus(plugin.settings.randomMode, plugin.deck);
@@ -45,7 +45,7 @@ export class GeneratorCommands {
 
         plugin.addCommand({
             id: 'opse-generate-hook',
-            name: 'OPSE: Plot Hook',
+            name: 'OPSE: Plot hook',
             callback: async () => {
                 const r1 = Random.d(6);
                 const r2 = Random.d(6);
@@ -78,7 +78,7 @@ export class GeneratorCommands {
 
         plugin.addCommand({
             id: 'opse-generate-npc',
-            name: 'OPSE: NPC Generator',
+            name: 'OPSE: NPC generator',
             callback: async () => {
                 const focusId = Random.drawFocus(plugin.settings.randomMode, plugin.deck);
                 const focusGoal = Random.drawFocus(plugin.settings.randomMode, plugin.deck);
@@ -121,7 +121,7 @@ export class GeneratorCommands {
 
         plugin.addCommand({
             id: 'opse-generate-generic',
-            name: 'OPSE: Generic Content',
+            name: 'OPSE: Generic content',
             callback: async () => {
                 const focusAction = Random.drawFocus(plugin.settings.randomMode, plugin.deck);
                 const focusDetail = Random.drawFocus(plugin.settings.randomMode, plugin.deck);
@@ -155,7 +155,7 @@ export class GeneratorCommands {
 
         plugin.addCommand({
             id: 'opse-plot-twist',
-            name: 'OPSE: Giro de Trama',
+            name: 'OPSE: Giro de trama',
             callback: async () => {
                 const roll = Random.d(6);
                 const content = OPSE.getPlotTwist(roll - 1);
@@ -176,7 +176,7 @@ export class GeneratorCommands {
 
         plugin.addCommand({
             id: 'opse-flavor',
-            name: 'OPSE: Ambiente / Clima',
+            name: 'OPSE: Ambiente / clima',
             callback: async () => {
                 const rollAtm = Random.d(6);
                 const rollWea = Random.d(6);

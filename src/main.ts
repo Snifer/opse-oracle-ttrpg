@@ -24,7 +24,7 @@ export default class OPSEOraclePlugin extends Plugin {
         I18n.setLanguage(this.settings.language);
         
         // Add Ribbon Icon
-        this.addRibbonIcon('dice', 'OPSE Control', () => {
+        this.addRibbonIcon('dice', 'OPSE control', () => {
             this.activateView(VIEW_TYPE_OPSE_CONTROL);
         });
         

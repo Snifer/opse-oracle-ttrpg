@@ -18,7 +18,7 @@ export class ExplorationView extends ItemView {
     }
 
     getDisplayText() {
-        return "OPSE Exploration";
+        return "OPSE exploration";
     }
 
     getIcon() {
@@ -155,7 +155,7 @@ export class ExplorationView extends ItemView {
     private renderPathMap(parent: HTMLElement, path: string[]) {
         if (path && path.length > 0) {
             const mapEl = parent.createDiv({ cls: "opse-path-map" });
-            mapEl.createEl("h5", { text: "Mapa de Ruta:" });
+            mapEl.createEl("h5", { text: "Mapa de ruta:" });
             const pathText = path.join(" ➔ ");
             mapEl.createDiv({ text: pathText, cls: "opse-path-text" });
         }

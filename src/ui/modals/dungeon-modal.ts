@@ -17,18 +17,18 @@ export class DungeonModal extends Modal {
 
     onOpen() {
         const { contentEl } = this;
-        contentEl.createEl('h2', { text: "Dungeon Tracker" });
+        contentEl.createEl('h2', { text: "Dungeon tracker" });
 
         new Setting(contentEl)
             .setName(t().ADVENTURE.TITLE)
             .addText(text => text.setValue(this.name).onChange(value => this.name = value));
 
         new Setting(contentEl)
-            .setName("Appearance / Theme")
+            .setName("Appearance / theme")
             .addText(text => text.setValue(this.appearance).onChange(value => this.appearance = value));
 
         new Setting(contentEl)
-            .setName("Function / Purpose")
+            .setName("Function / purpose")
             .addText(text => text.setValue(this.function).onChange(value => this.function = value));
 
         new Setting(contentEl)
