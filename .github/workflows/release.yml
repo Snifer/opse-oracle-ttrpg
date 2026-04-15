@@ -24,8 +24,7 @@ jobs:
           node-version: 20
 
       - name: Install dependencies
-        run: npm ci
-
+        run: npm install --legacy-peer-deps
       - name: Run ESLint (solo reglas obsidian)
         id: eslint
         run: |
