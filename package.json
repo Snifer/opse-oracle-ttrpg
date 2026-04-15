@@ -1,6 +1,6 @@
 {
   "name": "opse-oracle-ttrpg",
-  "version": "0.0.1",
+  "version": "0.0.2-dev",
   "description": "OPSE Oracle for Obsidian - Original solo RPG engine companion based on OPSE v1.6.",
   "main": "main.js",
   "scripts": {
