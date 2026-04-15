@@ -3,10 +3,139 @@ on:
   push:
     branches:
       - main
-jobs:
-  release:
-    runs-on: ubuntu-latest
 
+jobs:
+  # ────────────────────────────────────────────────────────────
+  # JOB 1: Lint con reglas de Obsidian (bloquea si hay errores)
+  # ────────────────────────────────────────────────────────────
+  lint:
+    name: ESLint Obsidian check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint (solo reglas obsidian)
+        id: eslint
+        run: |
+          set +e
+          npx eslint src --rule 'obsidian/no-constructor-dep: error' \
+                         --rule 'obsidian/no-deprecated-components: error' \
+                         -f json -o eslint-report.json
+          EXIT_CODE=$?
+          echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
+          set -e
+          exit $EXIT_CODE
+
+      # Sube el reporte como artefacto para que el job siguiente lo lea
+      - name: Upload ESLint report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eslint-report-release
+          path: eslint-report.json
+          retention-days: 7
+
+  # ────────────────────────────────────────────────────────────
+  # JOB 2: Crea issue de incompatibilidad si el lint falla
+  # ────────────────────────────────────────────────────────────
+  report-lint-failure:
+    name: Create incompatibility issue
+    needs: lint
+    runs-on: ubuntu-latest
+    if: failure()
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download ESLint report
+        uses: actions/download-artifact@v4
+        with:
+          name: eslint-report-release
+
+      - name: Format lint report as markdown
+        id: format
+        run: |
+          python3 - <<'EOF'
+          import json, os
+
+          with open("eslint-report.json") as f:
+              data = json.load(f)
+
+          lines = []
+          lines.append("## Incompatibilidad detectada por ESLint (Obsidian plugin)")
+          lines.append("")
+          lines.append(f"| Campo | Valor |")
+          lines.append(f"|---|---|")
+          lines.append(f"| **Rama** | `" + os.environ.get('BRANCH','') + "` |")
+          lines.append(f"| **Commit** | `" + os.environ.get('COMMIT_SHA','') + "` |")
+          lines.append(f"| **Autor** | @" + os.environ.get('ACTOR','') + " |")
+          lines.append(f"| **Workflow run** | [Ver logs](" + os.environ.get('RUN_URL','') + ") |")
+          lines.append("")
+          lines.append("### Errores encontrados")
+          lines.append("")
+
+          total = 0
+          for file_result in data:
+              rel_path = file_result["filePath"].replace(os.getcwd(), "").lstrip("/")
+              for msg in file_result.get("messages", []):
+                  if msg.get("severity", 0) >= 2:
+                      rule = msg.get("ruleId", "unknown")
+                      if rule and rule.startswith("obsidian/"):
+                          lines.append(f"- `{rel_path}` **L{msg['line']}:{msg['column']}** — `{rule}`")
+                          lines.append(f"  > {msg['message']}")
+                          lines.append("")
+                          total += 1
+
+          if total == 0:
+              lines.append("_No se encontraron errores de reglas Obsidian en el reporte._")
+
+          lines.append("")
+          lines.append("---")
+          lines.append("> Este issue fue creado automáticamente por el workflow de lint. Corrige los errores antes de hacer merge a `main`.")
+
+          with open("issue-body.md", "w") as out:
+              out.write("\n".join(lines))
+          EOF
+        env:
+          BRANCH: ${{ github.ref_name }}
+          COMMIT_SHA: ${{ github.sha }}
+          ACTOR: ${{ github.actor }}
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+      - name: Create GitHub issue
+        uses: peter-evans/create-issue-from-file@v5
+        with:
+          title: "[Incompatibilidad Obsidian] ESLint fallo en main @ ${{ github.sha }}"
+          content-filepath: ./issue-body.md
+          labels: |
+            bug
+            incompatibility
+            obsidian-api
+            release
+
+  # ────────────────────────────────────────────────────────────
+  # JOB 3: Release estable (solo corre si el lint paso OK)
+  # ────────────────────────────────────────────────────────────
+  release:
+    name: Release estable
+    needs: lint
+    runs-on: ubuntu-latest
     permissions:
       contents: write
 
@@ -24,14 +153,14 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      # 1) Leer la versión actual de package.json (sin hacer bump)
+      # 1) Leer la version actual de package.json (sin hacer bump)
       - name: Get version
         id: get_version
         run: |
           VERSION=$(node -p "require('./package.json').version")
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
-      # 2) Sincronizar manifest.json con la versión de package.json
+      # 2) Sincronizar manifest.json con la version de package.json
       - name: Sync version to manifest.json
         run: |
           VERSION=${{ steps.get_version.outputs.version }}
@@ -40,12 +169,12 @@ jobs:
           git add manifest.json || true
           git commit -m "chore: sync manifest version to ${VERSION}" || echo "No changes to commit"
 
-      # 3) Actualizar versions.json con la nueva versión y su minAppVersion de Obsidian
+      # 3) Actualizar versions.json con la nueva version y su minAppVersion de Obsidian
       - name: Update versions.json
         run: |
           VERSION=${{ steps.get_version.outputs.version }}
           MIN_OBSIDIAN=$(jq -r '.minAppVersion' manifest.json)
-          # Añade la nueva entrada al JSON existente
+          # Anade la nueva entrada al JSON existente
           jq ". + {\"${VERSION}\": \"${MIN_OBSIDIAN}\"}" versions.json > versions.tmp.json
           mv versions.tmp.json versions.json
           git add versions.json
@@ -57,17 +186,14 @@ jobs:
         run: |
           VERSION=${{ steps.get_version.outputs.version }}
           TAG="${VERSION}"
-
-          # Si ya existe localmente, bórralo
+          # Si ya existe localmente, borralo
           if git rev-parse "${TAG}" >/dev/null 2>&1; then
             git tag -d "${TAG}"
           fi
-
-          # Si ya existe en remoto, bórralo
+          # Si ya existe en remoto, borralo
           if git ls-remote --tags origin "${TAG}" | grep "${TAG}" >/dev/null 2>&1; then
             git push origin ":refs/tags/${TAG}"
           fi
-
           # Crear y pushear el tag limpio
           git tag "${TAG}"
           git push origin "${TAG}"
