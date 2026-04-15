@@ -1,4 +1,4 @@
-MIT License
+MIT License / Licencia MIT
 
 Copyright (c) 2026 Snifer
 
@@ -9,8 +9,19 @@ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
 
+Se concede por la presente permiso, de forma gratuita, a cualquier persona
+que obtenga una copia de este software y de los archivos de documentación
+asociados (el "Software"), para utilizar el Software sin restricción,
+incluyendo sin limitación los derechos a usar, copiar, modificar, fusionar,
+publicar, distribuir, sublicenciar y/o vender copias del Software, y a
+permitir a las personas a las que se les proporcione el Software hacerlo,
+con sujeción a las siguientes condiciones:
+
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
+
+El aviso de copyright anterior y este aviso de permiso se deberán incluir
+en todas las copias o porciones sustanciales del Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -19,3 +30,44 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+EL SOFTWARE SE PROPORCIONA "TAL CUAL", SIN GARANTÍA DE NINGÚN TIPO, EXPRESA
+O IMPLÍCITA, INCLUYENDO PERO NO LIMITÁNDOSE A LAS GARANTÍAS DE
+COMERCIALIZACIÓN, IDONEIDAD PARA UN PROPÓSITO PARTICULAR Y NO INFRACCIÓN.
+EN NINGÚN CASO LOS AUTORES O TITULARES DEL COPYRIGHT SERÁN RESPONSABLES
+DE NINGUNA RECLAMACIÓN, DAÑO O OTRA RESPONSABILIDAD, YA SEA EN UNA ACCIÓN
+CONTRACTUAL, AGRAVIO O CUALQUIER OTRA, QUE SURJA DE, O EN CONEXIÓN CON EL
+SOFTWARE O EL USO U OTRO TIPO DE ACCIONES EN EL SOFTWARE.
+
+
+------------------------------------------
+OPSE content license notice / Aviso OPSE
+------------------------------------------
+
+This repository contains derivative content based on "One Page Solo Engine"
+by Karl Hendricks (Inflatable Studios), version 1.6, licensed under
+Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0).
+
+Este repositorio contiene contenido derivado de "One Page Solo Engine"
+de Karl Hendricks (Inflatable Studios), versión 1.6, licenciado bajo
+Creative Commons Atribución-CompartirIgual 4.0 Internacional (CC BY-SA 4.0).
+
+The Spanish translation of One Page Solo Engine by Micky Pardo is also
+licensed under CC BY-SA 4.0 and is used under those terms.
+
+La traducción al castellano de One Page Solo Engine realizada por Micky Pardo
+también está licenciada bajo CC BY-SA 4.0 y se utiliza bajo esos términos.
+
+All textual content in this repository that is derived from
+"One Page Solo Engine" (including adapted tables, prompts and procedures)
+is licensed under CC BY-SA 4.0.
+
+Todo el contenido textual de este repositorio derivado de
+"One Page Solo Engine" (incluyendo tablas adaptadas, disparadores y
+procedimientos) se licencia bajo CC BY-SA 4.0.
+
+The source code of this Obsidian plugin (excluding OPSE-derived text)
+is licensed under the MIT License as described above.
+
+El código fuente de este plugin de Obsidian (excluyendo el texto derivado
+de OPSE) se licencia bajo la Licencia MIT según se describe arriba.
