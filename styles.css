@@ -1,0 +1,529 @@
+/* 
+    OPSE Oracle for Obsidian - Premium Styles
+    Theme: Mystic Solo Voyager
+*/
+
+:root {
+    --opse-accent: #8b5cf6; /* Violet-500 */
+    --opse-accent-soft: rgba(139, 92, 246, 0.1);
+    --opse-success: #10b981;
+    --opse-error: #ef4444;
+    --opse-bg-glass: rgba(255, 255, 255, 0.03);
+    --opse-border-glass: rgba(255, 255, 255, 0.1);
+    --opse-radius: 6px; /* Slightly more compact */
+    --opse-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.theme-light {
+    --opse-bg-glass: rgba(0, 0, 0, 0.05);
+    --opse-border-glass: rgba(0, 0, 0, 0.1);
+}
+
+/* Base resets & Typography */
+.opse-control-root, .opse-history-root, .opse-exploration-root, .opse-unified-root {
+    font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.opse-unified-root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-height: 100%;
+    overflow: hidden;
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+}
+
+/* Control Panel */
+.opse-control-root {
+    flex: 0 0 auto;
+    padding: 10px;
+    border-bottom: 2px solid var(--opse-accent);
+    background: var(--background-secondary-alt);
+    z-index: 10;
+    overflow-y: auto;
+    max-height: 80vh;
+}
+
+/* Adventure Dashboard Card */
+.opse-adventure-card {
+    background: linear-gradient(135deg, var(--opse-accent-soft), var(--opse-bg-glass));
+    border: 1px solid var(--opse-accent);
+    border-radius: var(--opse-radius);
+    padding: 15px;
+    margin-bottom: 20px;
+    position: relative;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.opse-adventure-card h4 {
+    margin: 0 0 10px 0;
+    font-size: 1.2em;
+    color: var(--text-normal);
+    border-bottom: 1px solid var(--opse-accent);
+    padding-bottom: 8px;
+}
+
+.opse-rank-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+    background: rgba(0,0,0,0.1);
+    padding: 8px 12px;
+    border-radius: 6px;
+}
+
+.opse-rank-value {
+    font-size: 1.4em;
+    font-weight: 800;
+    color: var(--opse-accent);
+    min-width: 25px;
+    text-align: center;
+}
+
+.opse-rank-controls {
+    display: flex;
+    gap: 4px;
+}
+
+.opse-rank-btn {
+    padding: 2px 8px;
+    font-size: 1.1em;
+    font-weight: bold;
+    border-radius: 4px;
+    background: var(--opse-accent);
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.opse-rank-btn:hover {
+    filter: brightness(1.2);
+}
+
+/* Threads Manager */
+.opse-thread-section h5 {
+    font-size: 0.75em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 15px 0 8px 0;
+}
+
+.opse-thread-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.opse-thread-item {
+    background: var(--opse-bg-glass);
+    border: 1px solid var(--opse-border-glass);
+    padding: 6px 10px;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9em;
+}
+
+.opse-thread-item span {
+    flex: 1;
+}
+
+.opse-del-btn {
+    background: none;
+    border: none;
+    color: var(--opse-error);
+    font-size: 1.4em;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 4px;
+    opacity: 0.6;
+}
+
+.opse-del-btn:hover {
+    opacity: 1;
+}
+
+.opse-add-thread {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.opse-add-thread input {
+    flex: 1;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--opse-border-glass);
+    border-radius: 4px;
+    padding: 6px;
+    font-size: 0.85em;
+}
+
+.opse-add-thread button {
+    background: var(--opse-accent);
+    color: white;
+    border: none;
+    padding: 0 12px;
+    border-radius: 4px;
+    font-size: 1.2em;
+    cursor: pointer;
+}
+
+.opse-control-section, .opse-adventure-card {
+    background: var(--opse-bg-glass);
+    border: 1px solid var(--opse-border-glass);
+    border-radius: var(--opse-radius);
+    margin-bottom: 8px; /* Reduced from 16px */
+    backdrop-filter: blur(4px);
+    transition: var(--opse-transition);
+    overflow: hidden;
+}
+
+.opse-control-section[open], .opse-adventure-card[open] {
+    border-color: var(--opse-accent);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.opse-control-section summary, .opse-adventure-card summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 10px 12px;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--opse-accent);
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--opse-accent-soft);
+}
+
+.opse-control-section summary::-webkit-details-marker {
+    display: none;
+}
+
+.opse-control-section summary::after, .opse-adventure-card summary::after {
+    content: '▶';
+    font-size: 0.8em;
+    transition: transform 0.2s;
+}
+
+.opse-control-section[open] summary::after, .opse-adventure-card[open] summary::after {
+    transform: rotate(90deg);
+}
+
+.opse-section-content {
+    padding: 12px;
+}
+
+.opse-control-section:hover {
+    border-color: var(--opse-accent);
+}
+
+.opse-control-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.opse-control-grid button {
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    padding: 8px 4px;
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: var(--opse-transition);
+    color: var(--text-normal);
+}
+
+.opse-control-grid button:hover {
+    background-color: var(--opse-accent);
+    color: white;
+    border-color: var(--opse-accent);
+    transform: translateY(-1px);
+}
+
+.opse-full-width-btn {
+    width: 100%;
+}
+
+/* Help Section */
+.opse-help-details {
+    margin-bottom: 16px;
+    background: var(--opse-accent-soft);
+    border-radius: var(--opse-radius);
+    padding: 8px;
+    border: 1px solid var(--opse-accent);
+}
+
+.opse-help-details summary {
+    font-size: 0.85em;
+    font-weight: 700;
+    cursor: pointer;
+    color: var(--opse-accent);
+    outline: none;
+}
+
+.opse-help-content {
+    margin-top: 10px;
+    font-size: 0.8em;
+    line-height: 1.4;
+    color: var(--text-normal);
+}
+
+.opse-help-content p {
+    margin: 4px 0;
+}
+
+/* Unified History Wrapper */
+.opse-history-wrapper {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.opse-history-wrapper h4 {
+    margin-top: 5px;
+}
+
+/* History Cards */
+.opse-history-card {
+    background: var(--opse-bg-glass);
+    border: 1px solid var(--opse-border-glass);
+    border-radius: var(--opse-radius);
+    padding: 14px;
+    margin-bottom: 12px;
+    transition: var(--opse-transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.opse-history-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 4px; height: 100%;
+    background: var(--opse-accent);
+    opacity: 0.7;
+}
+
+.opse-history-card:hover {
+    border-color: var(--opse-accent);
+    transform: translateX(2px);
+}
+
+.opse-type-tag {
+    font-size: 0.65em;
+    background: var(--opse-accent-soft);
+    color: var(--opse-accent);
+    border: 1px solid var(--opse-accent);
+    padding: 2px 6px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    font-weight: 800;
+}
+
+.opse-timestamp {
+    font-size: 0.7em;
+    opacity: 0.6;
+}
+
+/* Pin styles */
+.opse-history-card.is-pinned {
+    border-color: var(--opse-accent);
+    box-shadow: 0 0 10px var(--opse-accent-soft);
+}
+
+.opse-history-card.is-pinned::before {
+    background: var(--opse-success); /* Green bar for pinned items */
+    width: 6px;
+}
+
+.opse-pin-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: var(--opse-transition);
+    opacity: 0.3;
+}
+
+.opse-history-card:hover .opse-pin-btn, .opse-history-card.is-pinned .opse-pin-btn {
+    opacity: 1;
+}
+
+.opse-pin-btn.is-active {
+    color: var(--opse-success);
+}
+
+.opse-history-question {
+    font-size: 1.05em;
+    font-weight: 600;
+    margin: 8px 0;
+    color: var(--text-normal);
+}
+
+.opse-history-content {
+    font-size: 1em;
+    line-height: 1.4;
+    color: var(--text-muted);
+}
+
+.opse-history-raw {
+    font-family: var(--font-monospace);
+    font-size: 0.75em;
+    background: rgba(0,0,0,0.1);
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin-top: 10px;
+    display: inline-block;
+}
+
+/* Actions */
+.opse-history-actions {
+    margin-top: 12px;
+    display: flex;
+    gap: 12px;
+    opacity: 0;
+    transition: var(--opse-transition);
+}
+
+.opse-history-card:hover .opse-history-actions {
+    opacity: 1;
+}
+
+.opse-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75em;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.opse-action-btn:hover {
+    color: var(--opse-accent);
+    background: var(--opse-accent-soft);
+}
+
+/* Forms in cards */
+.opse-interpretation-edit {
+    width: 100%;
+    background: rgba(0,0,0,0.1);
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 6px;
+    font-size: 0.85em;
+    margin-top: 8px;
+    color: var(--text-normal);
+    transition: var(--opse-transition);
+}
+
+.opse-interpretation-edit:focus {
+    border-color: var(--opse-accent);
+    outline: none;
+    background: var(--background-primary);
+}
+
+/* Exploración */
+.opse-exploration-card {
+    background: linear-gradient(135deg, var(--opse-bg-glass), transparent);
+    border: 1px solid var(--opse-accent);
+    border-left: 4px solid var(--opse-accent);
+}
+
+.opse-exploration-controls {
+    margin: 15px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.opse-exploration-controls button {
+    width: 100%;
+}
+
+.opse-navigation-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 8px;
+    align-items: center;
+}
+
+.opse-nav-btn {
+    font-size: 0.7em;
+    padding: 2px 6px;
+    background: var(--opse-accent-soft);
+}
+
+.opse-compass-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin: 10px 0;
+}
+
+.opse-compass-grid button {
+    font-size: 0.75em;
+    padding: 6px 2px;
+}
+
+.opse-alert {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--opse-error);
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid var(--opse-error);
+    font-size: 0.8em;
+    text-align: center;
+    margin-top: 10px;
+}
+
+textarea.opse-interpretation-edit {
+    min-height: 80px;
+    resize: vertical;
+}
+
+/* Path Map */
+.opse-path-map {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px dotted var(--opse-accent);
+}
+
+.opse-path-map h5 {
+    font-size: 0.8em;
+    margin-bottom: 5px;
+    color: var(--opse-accent);
+}
+
+.opse-path-text {
+    font-size: 0.75em;
+    color: var(--text-muted);
+    font-style: italic;
+    line-height: 1.3;
+}
+
+.opse-likelihood-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.opse-likelihood-row button {
+    width: 100%;
+}
