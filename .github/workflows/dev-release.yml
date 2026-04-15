@@ -1,0 +1,86 @@
+name: Dev prerelease
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  prerelease:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      # 1) Bump versión patch y añadir sufijo -dev => 0.0.1-dev, 0.0.2-dev, etc.
+      - name: Bump prerelease version
+        id: bump
+        run: |
+          # Sube el patch en package.json sin tag git (ej: 0.0.1 -> 0.0.2)
+          BASE_VERSION=$(npm version patch --no-git-tag-version)
+          BASE_VERSION=${BASE_VERSION#v}
+          NEW_VERSION="${BASE_VERSION}-dev"
+          # Sobrescribe package.json con la versión -dev
+          node -e "
+          const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          pkg.version = '${NEW_VERSION}';
+          fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
+          echo \"version=${NEW_VERSION}\" >> $GITHUB_OUTPUT
+
+      # 2) Sincronizar manifest.json con la nueva versión
+      - name: Sync version to manifest.json
+        run: |
+          VERSION=${{ steps.bump.outputs.version }}
+          jq ".version = \"${VERSION}\"" manifest.json > manifest.tmp.json
+          mv manifest.tmp.json manifest.json
+
+      # 3) Commit de versión
+      - name: Commit version bump
+        run: |
+          VERSION=${{ steps.bump.outputs.version }}
+          git add package.json package-lock.json manifest.json || true
+          git commit -m "chore: bump dev version to ${VERSION}" || echo "No changes to commit"
+
+      # 4) Tag
+      - name: Create tag
+        run: |
+          VERSION=${{ steps.bump.outputs.version }}
+          git tag "v${VERSION}"
+          git push origin dev --tags
+
+      # 5) Build plugin (ajusta el comando a tu setup real)
+      - name: Build plugin
+        run: |
+          npm install
+          npm run build
+
+      # 6) Crear prerelease en GitHub
+      - name: Create GitHub prerelease
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.bump.outputs.version }}
+          name: "Dev v${{ steps.bump.outputs.version }}"
+          prerelease: true
+          draft: false
+          files: |
+            main.js
+            manifest.json
+            styles.css
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
