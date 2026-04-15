@@ -39,7 +39,7 @@ jobs:
           pkg.version = '${NEW_VERSION}';
           fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
           "
-          echo \"version=${NEW_VERSION}\" >> $GITHUB_OUTPUT
+          echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
 
       # 2) Sincronizar manifest.json con la nueva versión
       - name: Sync version to manifest.json
