@@ -1,0 +1,83 @@
+name: Release
+on:
+  push:
+    branches:
+      - main
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      # 1) Leer la versión actual de package.json (sin hacer bump)
+      - name: Get version
+        id: get_version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      # 2) Sincronizar manifest.json con la versión de package.json
+      - name: Sync version to manifest.json
+        run: |
+          VERSION=${{ steps.get_version.outputs.version }}
+          jq ".version = \"${VERSION}\"" manifest.json > manifest.tmp.json
+          mv manifest.tmp.json manifest.json
+          git add manifest.json || true
+          git commit -m "chore: sync manifest version to ${VERSION}" || echo "No changes to commit"
+
+      # 3) Tag (borra si ya existe, luego recrea)
+      - name: Create tag
+        run: |
+          VERSION=${{ steps.get_version.outputs.version }}
+          TAG="${VERSION}"
+
+          # Si ya existe localmente, bórralo
+          if git rev-parse "${TAG}" >/dev/null 2>&1; then
+            git tag -d "${TAG}"
+          fi
+
+          # Si ya existe en remoto, bórralo
+          if git ls-remote --tags origin "${TAG}" | grep "${TAG}" >/dev/null 2>&1; then
+            git push origin ":refs/tags/${TAG}"
+          fi
+
+          # Crear y pushear el tag limpio
+          git tag "${TAG}"
+          git push origin "${TAG}"
+
+      # 4) Build plugin
+      - name: Build plugin
+        run: |
+          npm install
+          npm run build
+
+      # 5) Crear release estable en GitHub
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.get_version.outputs.version }}
+          name: "${{ steps.get_version.outputs.version }}"
+          prerelease: false
+          draft: false
+          generate_release_notes: true
+          files: |
+            main.js
+            manifest.json
+            styles.css
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
