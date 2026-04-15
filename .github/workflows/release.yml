@@ -40,7 +40,19 @@ jobs:
           git add manifest.json || true
           git commit -m "chore: sync manifest version to ${VERSION}" || echo "No changes to commit"
 
-      # 3) Tag (borra si ya existe, luego recrea)
+      # 3) Actualizar versions.json con la nueva versión y su minAppVersion de Obsidian
+      - name: Update versions.json
+        run: |
+          VERSION=${{ steps.get_version.outputs.version }}
+          MIN_OBSIDIAN=$(jq -r '.minAppVersion' manifest.json)
+          # Añade la nueva entrada al JSON existente
+          jq ". + {\"${VERSION}\": \"${MIN_OBSIDIAN}\"}" versions.json > versions.tmp.json
+          mv versions.tmp.json versions.json
+          git add versions.json
+          git commit -m "chore: add ${VERSION} to versions.json (minAppVersion: ${MIN_OBSIDIAN})" || echo "No changes to commit"
+          git push
+
+      # 4) Tag (borra si ya existe, luego recrea)
       - name: Create tag
         run: |
           VERSION=${{ steps.get_version.outputs.version }}
@@ -60,13 +72,13 @@ jobs:
           git tag "${TAG}"
           git push origin "${TAG}"
 
-      # 4) Build plugin
+      # 5) Build plugin
       - name: Build plugin
         run: |
           npm install
           npm run build
 
-      # 5) Crear release estable en GitHub
+      # 6) Crear release estable en GitHub
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
