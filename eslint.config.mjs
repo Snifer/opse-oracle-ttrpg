@@ -7,5 +7,14 @@ export default tseslint.config(
   {
     // Ignora archivos generados por el build
     ignores: ["main.js", "node_modules/**"],
+  },
+  {
+    // Habilita informacion de tipos para reglas typed de typescript-eslint
+    languageOptions: {
+      parserOptions: {
+        project: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
   }
 );
