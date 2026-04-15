@@ -59,7 +59,7 @@ jobs:
       - name: Create tag
         run: |
           VERSION=${{ steps.bump.outputs.version }}
-          TAG="v${VERSION}"
+          TAG="${VERSION}"
 
           # Si ya existe localmente, bórralo
           if git rev-parse "${TAG}" >/dev/null 2>&1; then
@@ -85,8 +85,8 @@ jobs:
       - name: Create GitHub prerelease
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.bump.outputs.version }}
-          name: "Dev v${{ steps.bump.outputs.version }}"
+          tag_name: ${{ steps.bump.outputs.version }}
+          name: "Dev ${{ steps.bump.outputs.version }}"
           prerelease: true
           draft: false
           files: |
