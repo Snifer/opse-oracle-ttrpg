@@ -1,10 +1,8 @@
 name: Dev prerelease
-
 on:
   push:
     branches:
       - dev
-
 jobs:
   prerelease:
     runs-on: ubuntu-latest
@@ -57,15 +55,27 @@ jobs:
           git add package.json package-lock.json manifest.json || true
           git commit -m "chore: bump dev version to ${VERSION}" || echo "No changes to commit"
 
-      # 4) Tag
+      # 4) Tag (borra el tag local y remoto si ya existe, luego lo recrea)
       - name: Create tag
         run: |
           VERSION=${{ steps.bump.outputs.version }}
           TAG="v${VERSION}"
-          git tag "${TAG}"
-          git push origin "${TAG}" 
 
-      # 5) Build plugin (ajusta el comando a tu setup real)
+          # Si ya existe localmente, bórralo
+          if git rev-parse "${TAG}" >/dev/null 2>&1; then
+            git tag -d "${TAG}"
+          fi
+
+          # Si ya existe en remoto, bórralo
+          if git ls-remote --tags origin "${TAG}" | grep "${TAG}" >/dev/null 2>&1; then
+            git push origin ":refs/tags/${TAG}"
+          fi
+
+          # Crear y pushear el tag limpio
+          git tag "${TAG}"
+          git push origin "${TAG}"
+
+      # 5) Build plugin
       - name: Build plugin
         run: |
           npm install
