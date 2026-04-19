@@ -330,7 +330,7 @@ Exporta el historial completo en:
 
 La pantalla de ajustes está organizada en secciones:
 
-### 🌐 General
+###  General
 
 | Ajuste | Valores | Descripción |
 |---|---|---|
@@ -338,7 +338,7 @@ La pantalla de ajustes está organizada en secciones:
 | Modo de aleatorización | Dados / Cartas / Baraja Persistente | Fuente de aleatoriedad para focos |
 | Inserción automática | Sí/No | Insertar resultados en la nota activa automáticamente |
 
-### 🎨 Interfaz
+###  Interfaz
 
 | Ajuste | Valores | Descripción |
 |---|---|---|
@@ -451,217 +451,9 @@ Todos los comandos tienen el prefijo `OPSE:` y son accesibles desde la paleta de
 | `opse-hex-southwest` | Mover al Suroeste |
 | `opse-hex-northwest` | Mover al Noroeste |
 
----
 
-## Arquitectura técnica
 
-### Stack
 
-| Tecnología | Versión | Uso |
-|---|---|---|
-| TypeScript | 4.7.4 | Lenguaje principal |
-| Obsidian API | latest | Integración con el editor |
-| esbuild | 0.14.47 | Bundler (compila a `main.js`) |
-| ESLint + @typescript-eslint | 5.29.0 | Linting |
-
-### Estructura de archivos
-
-```
-src/
-├── main.ts                     Plugin lifecycle, command registration, view wiring
-├── settings.ts                 Settings UI tab (all sections + About)
-├── types.ts                    Shared TypeScript interfaces
-│
-├── core/
-│   ├── adventure-state.ts      OPSESettings interface, DEFAULT_SETTINGS, AdventureStateManager
-│   ├── deck.ts                 Virtual 54-card deck (shuffle, draw, Joker, serialize/deserialize)
-│   ├── dungeon.ts              DungeonManager — room graph generation, navigation
-│   ├── hex.ts                  HexManager — axial coordinate hex map, terrain generation
-│   ├── history.ts              HistoryManager — FIFO with pin support
-│   ├── opse.ts                 OPSE v1.6 rules engine — all table lookups
-│   └── random.ts               Random utilities (d(), roll2d6(), drawFocus(), pickOne())
-│
-├── commands/
-│   ├── exploration.ts          Dungeon/hex navigation commands
-│   ├── generators.ts           NPC, hook, event, generic generator commands
-│   └── oracle.ts               Oracle and focus commands
-│
-├── ui/
-│   ├── control-view.ts         Main dashboard (tabs, history, drag handle)
-│   ├── exploration-view.ts     Dungeon/hex tabbed exploration view
-│   └── modals/
-│       ├── adventure-modal.ts  New adventure dialog
-│       ├── dungeon-modal.ts    Dungeon creation dialog
-│       ├── hex-modal.ts        Hex region creation dialog
-│       ├── oracle-modal.ts     Yes/No oracle dialog
-│       └── scene-modal.ts      Scene setup dialog
-│
-├── utils/
-│   ├── exporter.ts             Session export (Markdown + JSON)
-│   └── markdown.ts             Insertion and result formatting
-│
-└── i18n/
-    ├── i18n.ts                 I18n singleton + t() shorthand
-    ├── en.ts                   English strings and OPSE tables
-    └── es.ts                   Spanish strings and OPSE tables
-```
-
-### Modelo de datos
-
-#### OPSESettings (persistido en `data.json` del plugin)
-
-```typescript
-interface OPSESettings {
-    // Core
-    adventures: Record<string, AdventureState>;
-    activeAdventureId: string | null;
-    history: HistoryEntry[];
-    dungeons: Record<string, DungeonState>;
-    regions: Record<string, RegionState>;
-
-    // Randomization
-    randomMode: 'dice' | 'cards' | 'persistent_deck';
-    deckCards: Card[] | null;
-    deckDiscard: Card[] | null;
-
-    // Behavior
-    autoInsert: boolean;
-    language: 'en' | 'es';
-    historyMaxEntries: number;
-    autoOpenExploration: boolean;
-    resetDeckOnAdventureChange: boolean;
-    exportFormat: 'markdown' | 'json';
-    defaultLikelihood: 'probable' | 'even' | 'improbable';
-    hexEventThreshold: number;
-
-    // UI
-    tabContentHeight: number;
-    defaultTab: 'scene' | 'oracle' | 'generators' | 'explore' | 'session';
-    compactHistory: boolean;
-    accentColor: string;
-    historyOrder: 'newest' | 'oldest';
-    timestampFormat: 'time' | 'datetime' | 'relative';
-    insertFormat: 'plain' | 'callout' | 'answer-only';
-    showRawRolls: boolean;
-    showDomain: boolean;
-}
-```
-
-#### AdventureState
-
-```typescript
-interface AdventureState {
-    id: string;
-    title: string;
-    system: string;
-    genre: string;
-    activeNotePath: string;
-    timestamp: number;
-    sceneRank: number;           // 1-6
-    threads: string[];           // active plot threads
-    dungeonId?: string;          // linked dungeon
-    regionId?: string;           // linked hex region
-}
-```
-
-#### HistoryEntry
-
-```typescript
-interface OracleResult {
-    id: string;
-    type: 'yesno' | 'howmuch' | 'focus' | 'event' | 'scene'
-        | 'move' | 'dungeon' | 'hex' | 'hook' | 'npc';
-    answer: string;
-    raw: string;                 // e.g. "(2d6=7: d1=4, d2=3)"
-    timestamp: number;
-    question?: string;
-    modifier?: string;           // "but..." / "and..."
-    domain?: string;             // suit domain
-    interpretation?: string;     // user-editable note
-    pinned?: boolean;
-}
-```
-
-#### DungeonState
-
-```typescript
-interface DungeonState {
-    id: string;
-    name: string;
-    themeAppearance: string;
-    themeFunction: string;
-    rooms: Record<string, DungeonRoom>;
-    currentRoomId: string | null;
-    path: string[];              // visited room names (route log)
-}
-
-interface DungeonRoom {
-    id: string;
-    name: string;
-    location: string;            // from DUNGEON_LOCATIONS table
-    encounter: string;           // from DUNGEON_ENCOUNTERS table
-    object: string;              // from DUNGEON_OBJECTS table
-    exits: number;               // remaining unexplored exits
-    connectedTo: string[];       // bidirectional connections (room IDs)
-    notes: string;
-}
-```
-
-#### RegionState
-
-```typescript
-interface RegionState {
-    id: string;
-    name: string;
-    commonTerrain: string;
-    uncommonTerrain: string;
-    rareTerrain: string;
-    hexes: Record<string, Hex>; // keyed by "q,r" (axial coordinates)
-    currentHex: { q: number, r: number };
-    path: string[];
-    eventThreshold?: number;     // d6 threshold, default 5
-}
-```
-
-### Lógica de persistencia
-
-- Todo el estado se persiste mediante `plugin.loadData()` / `plugin.saveData()` de la API de Obsidian
-- Los datos se guardan en `.obsidian/plugins/opse-oracle/data.json`
-- El estado de la baraja se serializa en modo Baraja Persistente en cada `saveSettings()`
-- El estado de dungeon/hex se guarda tras cada acción de navegación
-- El historial se guarda inmediatamente tras cada entrada nueva
-
-### Sistema de internacionalización
-
-El módulo `i18n` es un singleton con método `t()` que devuelve el objeto de strings del idioma activo. Todos los textos de UI y todas las tablas OPSE están en `en.ts` y `es.ts`. El cambio de idioma se aplica en tiempo real sin necesidad de reiniciar.
-
-Las tablas de naipes usan claves de string (`"2"` a `"A"`) para mapear rangos, lo que permite lookup directo desde el resultado del `drawFocus()`.
-
-### Accent color
-
-El color de acento se inyecta como CSS custom property en `document.documentElement`:
-
-```typescript
-applyAccentColor(color: string) {
-    document.documentElement.style.setProperty('--opse-accent', color);
-    document.documentElement.style.setProperty('--opse-accent-soft', `${color}1a`);
-}
-```
-
-Toda la UI usa `var(--opse-accent)` y `var(--opse-accent-soft)`, por lo que el cambio es instantáneo y global.
-
-### Scripts de desarrollo
-
-```bash
-npm run dev        # Modo watch (reconstruye al guardar)
-npm run build      # Build de producción
-npm run lint       # ESLint sobre src/**/*.ts
-npm run lint:fix   # ESLint con auto-fix
-```
-
-El output final es un único archivo `main.js` (~117KB minificado) junto con `styles.css`.
-
----
 
 ## Referencia de tablas OPSE v1.6
 
