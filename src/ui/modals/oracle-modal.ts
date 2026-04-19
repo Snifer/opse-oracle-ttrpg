@@ -8,7 +8,7 @@ import { t } from '../../i18n/i18n';
 
 export class OracleModal extends Modal {
     plugin: OPSEOraclePlugin;
-    question: string = "";
+    question = '';
 
     constructor(app: App, plugin: OPSEOraclePlugin) {
         super(app);
@@ -25,24 +25,24 @@ export class OracleModal extends Modal {
             .setDesc(strings.QUESTION_DESC)
             .addText(text => text.onChange(value => this.question = value));
 
-        const buttonRow = contentEl.createDiv({ cls: "opse-likelihood-row" });
-        
-        const btnProbable = buttonRow.createEl("button", { text: strings.PROBABLE, cls: "mod-cta" });
-        btnProbable.addEventListener("click", () => {
-            this.askOracle('probable');
-            this.close();
-        });
+        const buttonRow = contentEl.createDiv({ cls: 'opse-likelihood-row' });
+        const defaultLikelihood = this.plugin.settings.defaultLikelihood ?? 'even';
 
-        const btnEven = buttonRow.createEl("button", { text: strings.EVEN, cls: "mod-cta" });
-        btnEven.addEventListener("click", () => {
-            this.askOracle('even');
-            this.close();
-        });
+        const likelihoods: { key: 'probable' | 'even' | 'improbable', label: string }[] = [
+            { key: 'probable', label: strings.PROBABLE },
+            { key: 'even', label: strings.EVEN },
+            { key: 'improbable', label: strings.IMPROBABLE }
+        ];
 
-        const btnImprobable = buttonRow.createEl("button", { text: strings.IMPROBABLE, cls: "mod-cta" });
-        btnImprobable.addEventListener("click", () => {
-            this.askOracle('improbable');
-            this.close();
+        likelihoods.forEach(({ key, label }) => {
+            const btn = buttonRow.createEl('button', {
+                text: label,
+                cls: `mod-cta ${key === defaultLikelihood ? 'opse-default-likelihood' : ''}`
+            });
+            btn.addEventListener('click', () => {
+                this.askOracle(key);
+                this.close();
+            });
         });
     }
 
@@ -52,9 +52,9 @@ export class OracleModal extends Modal {
         const roll = Random.roll2d6();
         const { answer, modifier } = OPSE.resolveYesNo(roll.d1, roll.d2, likelihood);
 
-        let title = `${strings.YESNO_TITLE}: ${this.question || "..."}`;
-        let content = `${answer}${modifier ? ` ${modifier}` : ""}`;
-        let raw = `(2d6=${roll.d1 + roll.d2}: d1=${roll.d1} [${meta.ANSWER}], d2=${roll.d2} [${meta.MOD}], ${meta.LIKELIHOOD}: ${likelihood})`;
+        const title = `${strings.YESNO_TITLE}: ${this.question || '...'}`;
+        const content = `${answer}${modifier ? ` ${modifier}` : ''}`;
+        const raw = `(2d6=${roll.d1 + roll.d2}: d1=${roll.d1} [${meta.ANSWER}], d2=${roll.d2} [${meta.MOD}], ${meta.LIKELIHOOD}: ${likelihood})`;
 
         await this.plugin.historyManager.addEntry({
             id: crypto.randomUUID(),

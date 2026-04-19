@@ -1,16 +1,41 @@
-import { HistoryEntry, AdventureState } from "../types";
-import { DungeonState } from "./dungeon";
-import { RegionState } from "./hex";
+import { HistoryEntry, AdventureState, Card } from '../types';
+import { DungeonState } from './dungeon';
+import { RegionState } from './hex';
 
 export interface OPSESettings {
-    adventures: Record<string, AdventureState>; // Keyed by file path
+    adventures: Record<string, AdventureState>;
     activeAdventureId: string | null;
     randomMode: 'dice' | 'cards' | 'persistent_deck';
     autoInsert: boolean;
     language: 'en' | 'es';
     history: HistoryEntry[];
+    historyMaxEntries: number;
     dungeons: Record<string, DungeonState>;
     regions: Record<string, RegionState>;
+    // Deck persistence for persistent_deck mode
+    deckCards: Card[] | null;
+    deckDiscard: Card[] | null;
+    // UI layout
+    tabContentHeight: number;
+    defaultTab: 'scene' | 'oracle' | 'generators' | 'explore' | 'session';
+    compactHistory: boolean;
+    accentColor: string;
+    historyOrder: 'newest' | 'oldest';
+    timestampFormat: 'time' | 'datetime' | 'relative';
+
+    // Insert format
+    insertFormat: 'plain' | 'callout' | 'answer-only';
+    showRawRolls: boolean;
+    showDomain: boolean;
+
+    // Oracle defaults
+    defaultLikelihood: 'probable' | 'even' | 'improbable';
+    hexEventThreshold: number;
+
+    // Session & data
+    exportFormat: 'markdown' | 'json';
+    resetDeckOnAdventureChange: boolean;
+    autoOpenExploration: boolean;
 }
 
 export const DEFAULT_SETTINGS: OPSESettings = {
@@ -20,8 +45,25 @@ export const DEFAULT_SETTINGS: OPSESettings = {
     autoInsert: true,
     language: 'es',
     history: [],
+    historyMaxEntries: 100,
     dungeons: {},
-    regions: {}
+    regions: {},
+    deckCards: null,
+    deckDiscard: null,
+    tabContentHeight: 260,
+    defaultTab: 'oracle',
+    compactHistory: false,
+    accentColor: '#8b5cf6',
+    historyOrder: 'newest',
+    timestampFormat: 'time',
+    insertFormat: 'plain',
+    showRawRolls: true,
+    showDomain: true,
+    defaultLikelihood: 'even',
+    hexEventThreshold: 5,
+    exportFormat: 'markdown',
+    resetDeckOnAdventureChange: false,
+    autoOpenExploration: true
 };
 
 export class AdventureStateManager {
@@ -45,7 +87,7 @@ export class AdventureStateManager {
             sceneRank: 1,
             threads: []
         };
-        
+
         this.settings.adventures[notePath] = adventure;
         this.settings.activeAdventureId = id;
         await this.saveCallback(this.settings);
@@ -55,9 +97,8 @@ export class AdventureStateManager {
     getAdventure(notePath: string): AdventureState | undefined {
         const adventure = this.settings.adventures[notePath];
         if (adventure) {
-            // Migration for older adventures
-            if (adventure.sceneRank === undefined) adventure.sceneRank = 1;
-            if (!adventure.threads) adventure.threads = [];
+            if (adventure.sceneRank === undefined) {adventure.sceneRank = 1;}
+            if (!adventure.threads) {adventure.threads = [];}
         }
         return adventure;
     }
@@ -70,8 +111,12 @@ export class AdventureStateManager {
         }
     }
 
+    isNewAdventure(id: string): boolean {
+        return this.settings.activeAdventureId !== id;
+    }
+
     getActiveAdventure(): AdventureState | null {
-        if (!this.settings.activeAdventureId) return null;
+        if (!this.settings.activeAdventureId) {return null;}
         return Object.values(this.settings.adventures).find(a => a.id === this.settings.activeAdventureId) || null;
     }
 
@@ -85,7 +130,7 @@ export class AdventureStateManager {
 
     async removeThread(notePath: string, index: number): Promise<void> {
         const adventure = this.getAdventure(notePath);
-        if (adventure && adventure.threads[index]) {
+        if (adventure && adventure.threads[index] !== undefined) {
             adventure.threads.splice(index, 1);
             await this.saveCallback(this.settings);
         }
@@ -95,6 +140,22 @@ export class AdventureStateManager {
         const adventure = this.getAdventure(notePath);
         if (adventure) {
             adventure.sceneRank = Math.max(1, Math.min(6, rank));
+            await this.saveCallback(this.settings);
+        }
+    }
+
+    async linkDungeon(notePath: string, dungeonId: string): Promise<void> {
+        const adventure = this.getAdventure(notePath);
+        if (adventure) {
+            adventure.dungeonId = dungeonId;
+            await this.saveCallback(this.settings);
+        }
+    }
+
+    async linkRegion(notePath: string, regionId: string): Promise<void> {
+        const adventure = this.getAdventure(notePath);
+        if (adventure) {
+            adventure.regionId = regionId;
             await this.saveCallback(this.settings);
         }
     }

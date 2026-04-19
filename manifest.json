@@ -1,10 +1,10 @@
 {
-  "id": "opse-oracle-ttrpg",
-  "name": "OPSE Oracle for Obsidian",
-  "version": "",
+  "id": "opse-oracle",
+  "name": "OPSE Oracle",
+  "version": "1.0.0",
   "minAppVersion": "0.15.0",
-  "description": "Obsidian plugin implementing One Page Solo Engine (OPSE) oracles and tools for solo TTRPG play.",
+  "description": "Original solo RPG engine companion based on OPSE v1.6.",
   "author": "Snifer (Bastion del Dinosaurio)",
-  "authorUrl": "https://www.youtube.com/@BastiondelDinosaurio",
+  "authorUrl": "https://github.com/snifer/OPSE-Oracle",
   "isDesktopOnly": false
 }

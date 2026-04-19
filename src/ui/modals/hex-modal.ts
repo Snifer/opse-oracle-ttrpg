@@ -1,15 +1,16 @@
-import { App, Modal, Setting } from 'obsidian';
+import { App, Modal, Notice, Setting } from 'obsidian';
 import OPSEOraclePlugin from '../../main';
 import { HexManager } from '../../core/hex';
 import { MarkdownUtils } from '../../utils/markdown';
 import { t } from '../../i18n/i18n';
+import { VIEW_TYPE_OPSE_EXPLORATION } from '../exploration-view';
 
 export class HexModal extends Modal {
     plugin: OPSEOraclePlugin;
-    name: string = "Región";
-    common: string = "...";
-    uncommon: string = "...";
-    rare: string = "...";
+    name = 'Región';
+    common = '';
+    uncommon = '';
+    rare = '';
 
     constructor(app: App, plugin: OPSEOraclePlugin) {
         super(app);
@@ -18,23 +19,36 @@ export class HexModal extends Modal {
 
     onOpen() {
         const { contentEl } = this;
-        contentEl.createEl('h2', { text: "Hex exploration" });
+        const strings = t().EXPLORATION;
+        contentEl.createEl('h2', { text: strings.HEX_TITLE });
 
         new Setting(contentEl)
             .setName(t().ADVENTURE.TITLE)
-            .addText(text => text.setValue(this.name).onChange(value => this.name = value));
+            .addText(text => text
+                .setPlaceholder('Nombre de la región')
+                .setValue(this.name)
+                .onChange(value => this.name = value));
 
         new Setting(contentEl)
-            .setName("Common terrain")
-            .addText(text => text.setValue(this.common).onChange(value => this.common = value));
+            .setName(strings.COMMON_TERRAIN)
+            .addText(text => text
+                .setPlaceholder('Ej: Bosque')
+                .setValue(this.common)
+                .onChange(value => this.common = value));
 
         new Setting(contentEl)
-            .setName("Uncommon terrain")
-            .addText(text => text.setValue(this.uncommon).onChange(value => this.uncommon = value));
+            .setName(strings.UNCOMMON_TERRAIN)
+            .addText(text => text
+                .setPlaceholder('Ej: Pantano')
+                .setValue(this.uncommon)
+                .onChange(value => this.uncommon = value));
 
         new Setting(contentEl)
-            .setName("Rare terrain")
-            .addText(text => text.setValue(this.rare).onChange(value => this.rare = value));
+            .setName(strings.RARE_TERRAIN)
+            .addText(text => text
+                .setPlaceholder('Ej: Montaña')
+                .setValue(this.rare)
+                .onChange(value => this.rare = value));
 
         new Setting(contentEl)
             .addButton(btn => btn
@@ -46,24 +60,46 @@ export class HexModal extends Modal {
                 }));
     }
 
-    startRegion() {
-        const region = HexManager.createRegion(this.name, this.common, this.uncommon, this.rare);
+    async startRegion() {
+        const common = this.common || 'Terreno común';
+        const uncommon = this.uncommon || 'Terreno poco común';
+        const rare = this.rare || 'Terreno raro';
+
+        const region = HexManager.createRegion(this.name, common, uncommon, rare);
+        region.eventThreshold = this.plugin.settings.hexEventThreshold ?? 5;
         const startHex = region.hexes[HexManager.getHexKey(0, 0)];
 
-        let title = `Exploration: ${this.name}`;
-        let content = `**Terrain Schema:** ${this.common} / ${this.uncommon} / ${this.rare}\n\n`;
-        content += `**Starting Hex (0,0):**\n`;
-        content += `**Terrain:** ${startHex.terrain}\n`;
-        content += `**Contents:** ${startHex.contents}\n`;
-        content += `**Trait:** ${startHex.trait}\n`;
-        if (startHex.eventTriggered) content += `**EVENT TRIGGERED!**\n`;
+        // Persist region to settings
+        this.plugin.settings.regions[region.id] = region;
 
-        const markdown = MarkdownUtils.formatResult(title, content, "(Start of region exploration)");
-        MarkdownUtils.insertAtCursor(this.app, markdown);
+        // Link to active adventure if one exists
+        const active = this.plugin.adventureManager.getActiveAdventure();
+        if (active) {
+            active.regionId = region.id;
+            await this.plugin.adventureManager.linkRegion(active.activeNotePath, region.id);
+        }
+
+        await this.plugin.saveSettings();
+        new Notice(t().COMMON.REGION_CREATED);
+
+        // Insert summary into active note
+        let content = `**Terrenos:** ${common} / ${uncommon} / ${rare}\n\n`;
+        content += '**Hex inicial (0,0):**\n';
+        content += `**Terreno:** ${startHex.terrain}\n`;
+        content += `**Contenido:** ${startHex.contents}`;
+        if (startHex.eventTriggered) {content += '\n**¡EVENTO DISPARADO!**';}
+
+        const markdown = MarkdownUtils.formatResult(`Exploración: ${this.name}`, content, '(Inicio de la exploración)');
+        await MarkdownUtils.smartInsert(this.app, this.plugin, markdown);
+
+        // Open exploration view if setting enabled
+        if (this.plugin.settings.autoOpenExploration) {
+            await this.plugin.activateView(VIEW_TYPE_OPSE_EXPLORATION);
+        }
+        this.plugin.refreshViews();
     }
 
     onClose() {
-        const { contentEl } = this;
-        contentEl.empty();
+        this.contentEl.empty();
     }
 }

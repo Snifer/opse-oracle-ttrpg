@@ -1,5 +1,4 @@
-import { Card, Suit } from "../types";
-import { Random } from "./random";
+import { Card, Suit } from '../types';
 
 /**
  * Virtual deck management for OPSE
@@ -8,9 +7,9 @@ import { Random } from "./random";
 export class Deck {
     private cards: Card[] = [];
     private discard: Card[] = [];
-    private useJokers: boolean = false;
+    private useJokers = false;
 
-    constructor(useJokers: boolean = false) {
+    constructor(useJokers = false) {
         this.useJokers = useJokers;
         this.reset();
     }
@@ -20,22 +19,18 @@ export class Deck {
         this.discard = [];
         const suits = [Suit.Hearts, Suit.Diamonds, Suit.Clubs, Suit.Spades];
         const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-        
+
         for (const suit of suits) {
             for (let i = 0; i < ranks.length; i++) {
-                this.cards.push({
-                    rank: ranks[i],
-                    suit,
-                    value: i + 1
-                });
+                this.cards.push({ rank: ranks[i], suit, value: i + 1 });
             }
         }
-        
+
         if (this.useJokers) {
             this.cards.push({ rank: 'Joker', suit: Suit.Joker, value: 0 });
             this.cards.push({ rank: 'Joker', suit: Suit.Joker, value: 0 });
         }
-        
+
         this.shuffle();
     }
 
@@ -52,19 +47,19 @@ export class Deck {
             this.discard = [];
             this.shuffle();
         }
-        
+
         if (this.cards.length === 0) {
             this.reset();
         }
-        
+
         const card = this.cards.pop()!;
         this.discard.push(card);
-        
-        // OPSE v1.6: If Joker is drawn, reshuffle all cards immediately after the draw
+
+        // OPSE v1.6: If Joker is drawn, reshuffle all cards immediately
         if (card.suit === Suit.Joker) {
             this.reset();
         }
-        
+
         return card;
     }
 
@@ -74,5 +69,17 @@ export class Deck {
 
     getDiscardCount(): number {
         return this.discard.length;
+    }
+
+    getState(): { cards: Card[], discard: Card[] } {
+        return {
+            cards: [...this.cards],
+            discard: [...this.discard]
+        };
+    }
+
+    setState(cards: Card[], discard: Card[]): void {
+        this.cards = [...cards];
+        this.discard = [...discard];
     }
 }

@@ -22,16 +22,18 @@ export default class OPSEOraclePlugin extends Plugin {
     async onload() {
         await this.loadSettings();
         I18n.setLanguage(this.settings.language);
-        
-        // Add Ribbon Icon
-        this.addRibbonIcon('dice', 'OPSE control', () => {
+        this.applyAccentColor(this.settings.accentColor);
+
+        this.addRibbonIcon('dice', 'OPSE Control', () => {
             this.activateView(VIEW_TYPE_OPSE_CONTROL);
         });
-        
-        this.deck = new Deck();
-        if (this.settings.randomMode === 'persistent_deck') {
-            // Logic to restore deck state if it was saved?
-            // For now, new deck on reload.
+
+        // Initialize deck — jokers enabled when using card modes (OPSE v1.6)
+        const useJokers = this.settings.randomMode !== 'dice';
+        this.deck = new Deck(useJokers);
+        if (this.settings.randomMode === 'persistent_deck' &&
+            this.settings.deckCards && this.settings.deckCards.length > 0) {
+            this.deck.setState(this.settings.deckCards, this.settings.deckDiscard || []);
         }
 
         this.adventureManager = new AdventureStateManager(
@@ -41,7 +43,7 @@ export default class OPSEOraclePlugin extends Plugin {
 
         this.historyManager = new HistoryManager(
             this.settings.history,
-            100,
+            this.settings.historyMaxEntries,
             async (h) => {
                 this.settings.history = h;
                 await this.saveSettings();
@@ -49,14 +51,11 @@ export default class OPSEOraclePlugin extends Plugin {
             }
         );
 
-        // Register View Creators
         this.registerView(VIEW_TYPE_OPSE_CONTROL, (leaf) => new ControlPanelView(leaf, this));
         this.registerView(VIEW_TYPE_OPSE_EXPLORATION, (leaf) => new ExplorationView(leaf, this));
 
-        // Setting Tab
         this.addSettingTab(new OPSESettingTab(this.app, this));
 
-        // Commands
         this.addCommand({
             id: 'opse-open-control',
             name: `OPSE: ${t().SETTINGS.OPEN_CONTROL}`,
@@ -66,7 +65,7 @@ export default class OPSEOraclePlugin extends Plugin {
         this.addCommand({
             id: 'opse-open-history',
             name: `OPSE: ${t().SETTINGS.OPEN_HISTORY}`,
-            callback: () => this.activateView(VIEW_TYPE_OPSE_CONTROL) // History is now in Control Panel
+            callback: () => this.activateView(VIEW_TYPE_OPSE_CONTROL)
         });
 
         this.addCommand({
@@ -93,11 +92,11 @@ export default class OPSEOraclePlugin extends Plugin {
             callback: () => new OracleModal(this.app, this).open()
         });
 
-        // Register Modular Commands
         OracleCommands.registerCommands(this);
         GeneratorCommands.registerCommands(this);
         ExplorationCommands.registerCommands(this);
 
+        // eslint-disable-next-line no-console
         console.log('OPSE Oracle plugin loaded');
     }
 
@@ -110,31 +109,64 @@ export default class OPSEOraclePlugin extends Plugin {
             leaf = leaves[0];
         } else {
             leaf = workspace.getRightLeaf(false);
-            await leaf.setViewState({ type, active: true });
+            if (leaf) {await leaf.setViewState({ type, active: true });}
         }
 
-        workspace.revealLeaf(leaf);
+        if (leaf) {workspace.revealLeaf(leaf);}
     }
 
     refreshViews() {
         this.app.workspace.getLeavesOfType(VIEW_TYPE_OPSE_EXPLORATION).forEach(leaf => {
-            if (leaf.view instanceof ExplorationView) leaf.view.refresh();
+            if (leaf.view instanceof ExplorationView) {leaf.view.refresh();}
         });
         this.app.workspace.getLeavesOfType(VIEW_TYPE_OPSE_CONTROL).forEach(leaf => {
-            if (leaf.view instanceof ControlPanelView) leaf.view.refresh();
+            if (leaf.view instanceof ControlPanelView) {leaf.view.refresh();}
         });
     }
 
     onunload() {
+        // eslint-disable-next-line no-console
         console.log('OPSE Oracle plugin unloaded');
     }
 
     async loadSettings() {
         this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+        // Migration: ensure all fields exist for users upgrading from older versions
+        if (!this.settings.dungeons) { this.settings.dungeons = {}; }
+        if (!this.settings.regions) { this.settings.regions = {}; }
+        if (!this.settings.historyMaxEntries) { this.settings.historyMaxEntries = 100; }
+        if (this.settings.deckCards === undefined) { this.settings.deckCards = null; }
+        if (this.settings.deckDiscard === undefined) { this.settings.deckDiscard = null; }
+        if (!this.settings.tabContentHeight) { this.settings.tabContentHeight = 260; }
+        if (!this.settings.defaultTab) { this.settings.defaultTab = 'oracle'; }
+        if (this.settings.compactHistory === undefined) { this.settings.compactHistory = false; }
+        if (!this.settings.accentColor) { this.settings.accentColor = '#8b5cf6'; }
+        if (!this.settings.historyOrder) { this.settings.historyOrder = 'newest'; }
+        if (!this.settings.timestampFormat) { this.settings.timestampFormat = 'time'; }
+        if (!this.settings.insertFormat) { this.settings.insertFormat = 'plain'; }
+        if (this.settings.showRawRolls === undefined) { this.settings.showRawRolls = true; }
+        if (this.settings.showDomain === undefined) { this.settings.showDomain = true; }
+        if (!this.settings.defaultLikelihood) { this.settings.defaultLikelihood = 'even'; }
+        if (!this.settings.hexEventThreshold) { this.settings.hexEventThreshold = 5; }
+        if (!this.settings.exportFormat) { this.settings.exportFormat = 'markdown'; }
+        if (this.settings.resetDeckOnAdventureChange === undefined) { this.settings.resetDeckOnAdventureChange = false; }
+        if (this.settings.autoOpenExploration === undefined) { this.settings.autoOpenExploration = true; }
+    }
+
+    applyAccentColor(color: string) {
+        document.documentElement.style.setProperty('--opse-accent', color);
+        // Derive soft version with 10% opacity
+        document.documentElement.style.setProperty('--opse-accent-soft', `${color}1a`);
     }
 
     async saveSettings(settings?: OPSESettings) {
-        if (settings) this.settings = settings;
+        if (settings) {this.settings = settings;}
+        // Persist deck state when using persistent_deck mode
+        if (this.settings.randomMode === 'persistent_deck' && this.deck) {
+            const state = this.deck.getState();
+            this.settings.deckCards = state.cards;
+            this.settings.deckDiscard = state.discard;
+        }
         await this.saveData(this.settings);
     }
 }

@@ -1,5 +1,5 @@
-import { Card, Suit } from "../types";
-import { Deck } from "./deck";
+import { Suit } from '../types';
+import { Deck } from './deck';
 
 /**
  * Randomization utilities for OPSE
@@ -27,9 +27,9 @@ export class Random {
             // Dice only mode (v1.6)
             const rankRoll = this.d(12);
             let rank = rankRoll.toString();
-            if (rankRoll === 11) rank = "J";
-            if (rankRoll === 12) rank = this.d(2) === 1 ? "Q" : "K";
-            if (rankRoll === 1) rank = "A";
+            if (rankRoll === 11) {rank = 'J';}
+            if (rankRoll === 12) {rank = this.d(2) === 1 ? 'Q' : 'K';}
+            if (rankRoll === 1) {rank = 'A';}
 
             const suitRoll = this.d(4);
             // v1.6 Dice Suit Mapping: 1=Clubs, 2=Diamonds, 3=Spades, 4=Hearts

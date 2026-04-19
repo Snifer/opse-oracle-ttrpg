@@ -1,7 +1,8 @@
-import { Random } from "./random";
+import { Random } from './random';
+import { OPSE } from './opse';
 
 /**
- * Hex exploration logic for OPSE
+ * Hex exploration logic for OPSE v1.6
  */
 
 export interface Hex {
@@ -9,7 +10,7 @@ export interface Hex {
     r: number;
     terrain: string;
     contents: string;
-    trait: string;
+    trait: string | null;
     eventTriggered: boolean;
     notes: string;
 }
@@ -20,9 +21,10 @@ export interface RegionState {
     commonTerrain: string;
     uncommonTerrain: string;
     rareTerrain: string;
-    hexes: Record<string, Hex>; // Keyed by "q,r"
+    hexes: Record<string, Hex>;
     currentHex: { q: number, r: number };
-    path: string[]; // List of hex terrain/coordinates visited
+    path: string[];
+    eventThreshold?: number;
 }
 
 export class HexManager {
@@ -30,25 +32,50 @@ export class HexManager {
         return `${q},${r}`;
     }
 
+    // OPSE v1.6: d6 — 1-2: same as current, 3-4: common, 5: uncommon, 6: rare
+    private static rollTerrain(region: RegionState, currentTerrain: string): string {
+        const roll = Random.d(6);
+        if (roll <= 2) {return currentTerrain;}
+        if (roll <= 4) {return region.commonTerrain;}
+        if (roll === 5) {return region.uncommonTerrain;}
+        return region.rareTerrain;
+    }
+
+    // OPSE v1.6: d6 — 1-5: nothing notable, 6: trait
+    private static rollContents(): string {
+        const roll = Random.d(6);
+        return OPSE.getHexContent(roll - 1);
+    }
+
+    // OPSE v1.6: d6 — 1-6 trait table
+    private static rollTrait(): string {
+        const roll = Random.d(6);
+        return OPSE.getHexTrait(roll - 1);
+    }
+
+    // Event threshold is configurable (default 5+ per OPSE v1.6)
+    private static rollEvent(threshold = 5): boolean {
+        return Random.d(6) >= threshold;
+    }
+
     static generateHex(region: RegionState, q: number, r: number): Hex {
-        const roll = Random.d(12);
-        let terrain = region.commonTerrain;
-        if (roll === 10 || roll === 11) terrain = region.uncommonTerrain;
-        if (roll === 12) terrain = region.rareTerrain;
-        
-        const contentsList = ["Ruinas", "Asentamiento", "Guarida", "Recurso", "Punto de interés", "Nada notable"];
-        const traits = ["Encantado", "Peligroso", "Sagrado", "Bello", "En ruinas", "Oculto"];
-        
+        const currentKey = HexManager.getHexKey(region.currentHex.q, region.currentHex.r);
+        const currentHex = region.hexes[currentKey];
+        const currentTerrain = currentHex ? currentHex.terrain : region.commonTerrain;
+
+        const contentsRoll = HexManager.rollContents();
+        const hasTrait = contentsRoll === 'RASGO' || contentsRoll === 'TRAIT';
+
         const hex: Hex = {
             q, r,
-            terrain,
-            contents: Random.pickOne(contentsList),
-            trait: Random.pickOne(traits),
-            eventTriggered: Random.d(6) >= 5, // Event on 5+
-            notes: ""
+            terrain: HexManager.rollTerrain(region, currentTerrain),
+            contents: hasTrait ? HexManager.rollTrait() : contentsRoll,
+            trait: hasTrait ? HexManager.rollTrait() : null,
+            eventTriggered: HexManager.rollEvent(region.eventThreshold ?? 5),
+            notes: ''
         };
-        
-        region.hexes[this.getHexKey(q, r)] = hex;
+
+        region.hexes[HexManager.getHexKey(q, r)] = hex;
         region.path.push(`${hex.terrain} (${q},${r})`);
         return hex;
     }
@@ -64,10 +91,19 @@ export class HexManager {
             currentHex: { q: 0, r: 0 },
             path: []
         };
-        
-        // Generate starting hex
-        this.generateHex(region, 0, 0);
-        
+
+        // Generate starting hex (use common terrain, no event on first hex)
+        const startHex: Hex = {
+            q: 0, r: 0,
+            terrain: common,
+            contents: 'Punto de partida',
+            trait: null,
+            eventTriggered: false,
+            notes: ''
+        };
+        region.hexes[HexManager.getHexKey(0, 0)] = startHex;
+        region.path.push(`${common} (0,0)`);
+
         return region;
     }
 
@@ -75,31 +111,31 @@ export class HexManager {
         const current = region.currentHex;
         let dq = 0, dr = 0;
 
+        // Axial coordinate offsets for pointy-top hexagons
         switch (direction) {
-            case 'N': dq = 0; dr = -1; break;
-            case 'NE': dq = 1; dr = -1; break;
-            case 'SE': dq = 1; dr = 0; break;
-            case 'S': dq = 0; dr = 1; break;
-            case 'SW': dq = -1; dr = 1; break;
-            case 'NW': dq = -1; dr = 0; break;
+            case 'N':  dq =  0; dr = -1; break;
+            case 'NE': dq =  1; dr = -1; break;
+            case 'SE': dq =  1; dr =  0; break;
+            case 'S':  dq =  0; dr =  1; break;
+            case 'SW': dq = -1; dr =  1; break;
+            case 'NW': dq = -1; dr =  0; break;
         }
 
         const nq = current.q + dq;
         const nr = current.r + dr;
-        
-        const key = this.getHexKey(nq, nr);
+        const key = HexManager.getHexKey(nq, nr);
+
         let hex = region.hexes[key];
-        
         if (!hex) {
-            hex = this.generateHex(region, nq, nr);
+            hex = HexManager.generateHex(region, nq, nr);
         }
 
         region.currentHex = { q: nq, r: nr };
         return hex;
     }
 
-    static addHexNote(region: RegionState, q: number, r: number, note: string) {
-        const key = this.getHexKey(q, r);
+    static addHexNote(region: RegionState, q: number, r: number, note: string): void {
+        const key = HexManager.getHexKey(q, r);
         if (region.hexes[key]) {
             region.hexes[key].notes = note;
         }

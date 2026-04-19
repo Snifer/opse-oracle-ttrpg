@@ -1,72 +1,83 @@
-import { App, Notice } from 'obsidian';
+import { Notice } from 'obsidian';
 import OPSEOraclePlugin from '../main';
 import { DungeonModal } from '../ui/modals/dungeon-modal';
 import { HexModal } from '../ui/modals/hex-modal';
 import { DungeonManager } from '../core/dungeon';
 import { HexManager } from '../core/hex';
 import { VIEW_TYPE_OPSE_EXPLORATION } from '../ui/exploration-view';
+import { t } from '../i18n/i18n';
 
 export class ExplorationCommands {
     static registerCommands(plugin: OPSEOraclePlugin) {
         plugin.addCommand({
             id: 'opse-create-dungeon',
-            name: 'Crear rastreador de mazmorra',
-            callback: () => {
-                new DungeonModal(plugin.app, plugin).open();
-            }
+            name: 'OPSE: Crear rastreador de mazmorra',
+            callback: () => new DungeonModal(plugin.app, plugin).open()
         });
 
         plugin.addCommand({
             id: 'opse-create-hex-region',
-            name: 'Crear región de hexágonos',
-            callback: () => {
-                new HexModal(plugin.app, plugin).open();
-            }
+            name: 'OPSE: Crear región de hexágonos',
+            callback: () => new HexModal(plugin.app, plugin).open()
         });
 
         plugin.addCommand({
             id: 'opse-explore-room',
-            name: 'Explorar siguiente área de la mazmorra',
+            name: 'OPSE: Explorar siguiente sala de la mazmorra',
             callback: async () => {
                 const active = plugin.adventureManager.getActiveAdventure();
-                if (active && active.dungeonId) {
-                    const dungeon = plugin.settings.dungeons[active.dungeonId];
-                    if (dungeon) {
-                        const next = DungeonManager.moveToNextRoom(dungeon);
-                        if (next) {
-                            await plugin.saveSettings();
-                            new Notice(`Nueva sala explorada: ${next.name}`);
-                            // Refresh view if open
-                            const leaf = plugin.app.workspace.getLeavesOfType(VIEW_TYPE_OPSE_EXPLORATION)[0];
-                            if (leaf) (leaf.view as any).refresh();
-                        } else {
-                            new Notice("No hay más salidas disponibles en esta sala.");
-                        }
-                    }
+                if (!active?.dungeonId) {
+                    new Notice(t().EXPLORATION.NO_DUNGEON);
+                    return;
+                }
+                const dungeon = plugin.settings.dungeons[active.dungeonId];
+                if (!dungeon) {
+                    new Notice(t().EXPLORATION.NO_DUNGEON);
+                    return;
+                }
+                const next = DungeonManager.moveToNextRoom(dungeon);
+                if (next) {
+                    await plugin.saveSettings();
+                    new Notice(`Sala explorada: ${next.name} — ${next.location}`);
+                    plugin.refreshViews();
                 } else {
-                    new Notice("No hay ninguna mazmorra activa.");
+                    new Notice(t().EXPLORATION.NO_EXITS);
                 }
             }
         });
 
-        plugin.addCommand({
-            id: 'opse-explore-hex',
-            name: 'Moverse al norte (Región hex)',
-            callback: async () => {
-                const active = plugin.adventureManager.getActiveAdventure();
-                if (active && active.regionId) {
-                    const region = plugin.settings.regions[active.regionId];
-                    if (region) {
-                        HexManager.moveToNeighbor(region, 'N');
-                        await plugin.saveSettings();
-                        new Notice(`Desplazado al norte.`);
-                        const leaf = plugin.app.workspace.getLeavesOfType(VIEW_TYPE_OPSE_EXPLORATION)[0];
-                        if (leaf) (leaf.view as any).refresh();
+        // Hex navigation commands for each direction (usable from command palette)
+        const hexDirections: Array<{ id: string, dir: 'N' | 'NE' | 'SE' | 'S' | 'SW' | 'NW', label: string }> = [
+            { id: 'opse-hex-north',     dir: 'N',  label: 'Norte' },
+            { id: 'opse-hex-northeast', dir: 'NE', label: 'Noreste' },
+            { id: 'opse-hex-southeast', dir: 'SE', label: 'Sureste' },
+            { id: 'opse-hex-south',     dir: 'S',  label: 'Sur' },
+            { id: 'opse-hex-southwest', dir: 'SW', label: 'Suroeste' },
+            { id: 'opse-hex-northwest', dir: 'NW', label: 'Noroeste' }
+        ];
+
+        for (const { id, dir, label } of hexDirections) {
+            plugin.addCommand({
+                id,
+                name: `OPSE: Moverse al ${label} (Hex)`,
+                callback: async () => {
+                    const active = plugin.adventureManager.getActiveAdventure();
+                    if (!active?.regionId) {
+                        new Notice(t().EXPLORATION.NO_REGION);
+                        return;
                     }
-                } else {
-                    new Notice("No hay ninguna región de hexágonos activa.");
+                    const region = plugin.settings.regions[active.regionId];
+                    if (!region) {
+                        new Notice(t().EXPLORATION.NO_REGION);
+                        return;
+                    }
+                    HexManager.moveToNeighbor(region, dir);
+                    await plugin.saveSettings();
+                    new Notice(`Movido al ${label}.`);
+                    plugin.refreshViews();
+                    await plugin.activateView(VIEW_TYPE_OPSE_EXPLORATION);
                 }
-            }
-        });
+            });
+        }
     }
 }

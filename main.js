@@ -33,7 +33,7 @@ __export(main_exports, {
   default: () => OPSEOraclePlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian12 = require("obsidian");
+var import_obsidian14 = require("obsidian");
 
 // src/core/adventure-state.ts
 var DEFAULT_SETTINGS = {
@@ -43,8 +43,25 @@ var DEFAULT_SETTINGS = {
   autoInsert: true,
   language: "es",
   history: [],
+  historyMaxEntries: 100,
   dungeons: {},
-  regions: {}
+  regions: {},
+  deckCards: null,
+  deckDiscard: null,
+  tabContentHeight: 260,
+  defaultTab: "oracle",
+  compactHistory: false,
+  accentColor: "#8b5cf6",
+  historyOrder: "newest",
+  timestampFormat: "time",
+  insertFormat: "plain",
+  showRawRolls: true,
+  showDomain: true,
+  defaultLikelihood: "even",
+  hexEventThreshold: 5,
+  exportFormat: "markdown",
+  resetDeckOnAdventureChange: false,
+  autoOpenExploration: true
 };
 var AdventureStateManager = class {
   constructor(settings, saveCallback) {
@@ -73,10 +90,12 @@ var AdventureStateManager = class {
   getAdventure(notePath) {
     const adventure = this.settings.adventures[notePath];
     if (adventure) {
-      if (adventure.sceneRank === void 0)
+      if (adventure.sceneRank === void 0) {
         adventure.sceneRank = 1;
-      if (!adventure.threads)
+      }
+      if (!adventure.threads) {
         adventure.threads = [];
+      }
     }
     return adventure;
   }
@@ -87,9 +106,13 @@ var AdventureStateManager = class {
       await this.saveCallback(this.settings);
     }
   }
+  isNewAdventure(id) {
+    return this.settings.activeAdventureId !== id;
+  }
   getActiveAdventure() {
-    if (!this.settings.activeAdventureId)
+    if (!this.settings.activeAdventureId) {
       return null;
+    }
     return Object.values(this.settings.adventures).find((a) => a.id === this.settings.activeAdventureId) || null;
   }
   async addThread(notePath, thread) {
@@ -101,7 +124,7 @@ var AdventureStateManager = class {
   }
   async removeThread(notePath, index) {
     const adventure = this.getAdventure(notePath);
-    if (adventure && adventure.threads[index]) {
+    if (adventure && adventure.threads[index] !== void 0) {
       adventure.threads.splice(index, 1);
       await this.saveCallback(this.settings);
     }
@@ -110,6 +133,20 @@ var AdventureStateManager = class {
     const adventure = this.getAdventure(notePath);
     if (adventure) {
       adventure.sceneRank = Math.max(1, Math.min(6, rank));
+      await this.saveCallback(this.settings);
+    }
+  }
+  async linkDungeon(notePath, dungeonId) {
+    const adventure = this.getAdventure(notePath);
+    if (adventure) {
+      adventure.dungeonId = dungeonId;
+      await this.saveCallback(this.settings);
+    }
+  }
+  async linkRegion(notePath, regionId) {
+    const adventure = this.getAdventure(notePath);
+    if (adventure) {
+      adventure.regionId = regionId;
       await this.saveCallback(this.settings);
     }
   }
@@ -133,7 +170,61 @@ var en = {
     LANGUAGE_DESC: "Select the plugin language.",
     OPEN_CONTROL: "Open control panel",
     OPEN_HISTORY: "Open history",
-    OPEN_EXPLORATION: "Open exploration tracker"
+    OPEN_EXPLORATION: "Open exploration tracker",
+    DATA_MANAGEMENT: "Data Management",
+    HISTORY_LIMIT: "History limit",
+    CLEAR_HISTORY: "Clear history",
+    CLEAR_BTN: "Clear",
+    CLEAR_CONFIRM: "Clear history? This action cannot be undone.",
+    SECTION_INTERFACE: "Interface",
+    DEFAULT_TAB: "Default tab",
+    DEFAULT_TAB_DESC: "Which tab opens when the control panel loads.",
+    COMPACT_HISTORY: "Compact mode",
+    COMPACT_HISTORY_DESC: "Smaller history cards to display more entries at once.",
+    ACCENT_COLOR: "Accent color",
+    ACCENT_COLOR_DESC: "Main UI color. Default: #8b5cf6 (violet).",
+    HISTORY_ORDER: "History order",
+    HISTORY_ORDER_DESC: "How to sort history entries.",
+    NEWEST_FIRST: "Newest first",
+    OLDEST_FIRST: "Oldest first",
+    TIMESTAMP_FORMAT: "Timestamp format",
+    TIMESTAMP_FORMAT_DESC: "How to display the time on each history entry.",
+    TIMESTAMP_TIME: "Time (HH:MM)",
+    TIMESTAMP_DATETIME: "Date and time",
+    TIMESTAMP_RELATIVE: 'Relative ("5 min ago")',
+    SECTION_INSERT: "Result insertion",
+    INSERT_FORMAT: "Insert format",
+    INSERT_FORMAT_DESC: "How results are inserted into notes.",
+    INSERT_PLAIN: "Plain markdown",
+    INSERT_CALLOUT: "Obsidian callout (> [!oracle])",
+    INSERT_ANSWER: "Answer only (no raw)",
+    SHOW_RAW: "Show raw rolls",
+    SHOW_RAW_DESC: "Include dice/card results (e.g. 1d6=4) in inserted text.",
+    SHOW_DOMAIN: "Show domain/suit",
+    SHOW_DOMAIN_DESC: "Show the suit domain (Physical, Social\u2026) in focus results.",
+    SECTION_ORACLES: "Oracles",
+    DEFAULT_LIKELIHOOD: "Default likelihood",
+    DEFAULT_LIKELIHOOD_DESC: "Pre-selected likelihood level when opening the Yes/No oracle.",
+    HEX_EVENT_THRESHOLD: "Hex event threshold",
+    HEX_EVENT_THRESHOLD_DESC: "An event triggers when the d6 roll meets or exceeds this value. Default: 5 (OPSE v1.6).",
+    SECTION_SESSION: "Session & data",
+    EXPORT_FORMAT: "Export format",
+    EXPORT_FORMAT_DESC: "File format when exporting the session.",
+    EXPORT_MD: "Markdown (.md)",
+    EXPORT_JSON: "JSON (.json)",
+    RESET_DECK: "Reset deck on adventure change",
+    RESET_DECK_DESC: "If enabled, the deck resets whenever a different adventure is activated.",
+    AUTO_OPEN_EXPLORATION: "Auto-open exploration",
+    AUTO_OPEN_EXPLORATION_DESC: "Open the exploration view automatically when creating a dungeon or hex region.",
+    SECTION_ABOUT: "About",
+    ABOUT_VERSION: "Version",
+    ABOUT_AUTHOR: "Author",
+    ABOUT_BASED_ON: "Based on",
+    ABOUT_LICENSE: "License",
+    ABOUT_OPSE_DESC: "One Page Solo Engine v1.6 by Karl Hendricks",
+    ABOUT_RESET_DEFAULTS: "Reset to defaults",
+    ABOUT_RESET_CONFIRM: "Reset all settings to defaults? History and adventures will not be affected.",
+    RESET_BTN: "Reset"
   },
   ADVENTURE: {
     NEW: "Start New Adventure",
@@ -162,7 +253,7 @@ var en = {
   HELP: {
     TITLE: "Procedures & Help",
     SCENE_STEREOTYPE: "1. Imagine the scene stereotype.",
-    SCENE_ALTERED: "2. Check if the scene is Altered (1d6 <= current Scene).",
+    SCENE_ALTERED: "2. Check if the scene is Altered (1d6 <= current Scene Rank).",
     EVENT_TRIGGER: "3. Roll a Random Event if a check fails or you are stuck.",
     GM_MOVES: "4. Use GM Moves to advance threats or complicate things."
   },
@@ -202,7 +293,22 @@ var en = {
     IMPROBABLE: "Improbable (5+)",
     ASK: "Ask",
     HOW_MUCH: "How Much? / What level?",
-    SCALES: ["Scarce", "Low", "Normal", "Notable", "Extraordinary", "Extreme"]
+    THEME: "Theme",
+    CMD_HOW_MUCH: "How Much / Level",
+    CMD_BEAT_MOVE: "Beat Move",
+    CMD_FAILURE_MOVE: "Failure Move",
+    CMD_FOCUS_ACTION: "Action Focus",
+    CMD_FOCUS_DETAIL: "Detail Focus",
+    CMD_FOCUS_THEME: "Theme Focus",
+    CMD_FOCUS_DOUBLE: "Double Focus (Action + Detail)",
+    SCALES: [
+      "Surprisingly scarce",
+      "Less than expected",
+      "About average",
+      "About average",
+      "More than expected",
+      "Extraordinary"
+    ]
   },
   DASHBOARD: {
     TITLE: "OPSE Dashboard",
@@ -216,7 +322,22 @@ var en = {
     NO_HISTORY: "No history yet.",
     BARAJAR: "Shuffle",
     EXPORTAR: "Export Log",
-    SHUFFLE_SUCCESS: "Deck shuffled."
+    SHUFFLE_SUCCESS: "Deck shuffled.",
+    EXPLORATION: "Exploration",
+    DUNGEON_BTN: "Dungeon",
+    HEX_BTN: "Hex Region",
+    EXPLORE_BTN: "Explore room",
+    FILTER_ALL: "All",
+    FILTER_LABEL: "Filter:",
+    DECK_INFO: "Deck:",
+    TAB_DUNGEON: "Dungeon",
+    TAB_HEX: "Hexagons",
+    TAB_SCENE: "Scene",
+    TAB_ORACLE: "Oracle",
+    TAB_GENERATORS: "Generate",
+    TAB_EXPLORE: "Explore",
+    TAB_SESSION: "Session",
+    GM_MOVES: "GM Moves"
   },
   METADATA: {
     ANSWER: "Answer",
@@ -238,92 +359,48 @@ var en = {
     PIN: "Pin",
     UNPIN: "Unpin",
     COPIED: "Copied to clipboard",
-    JOKER_NOTICE: "JOKER! A Random Event is automatically triggered."
+    JOKER_NOTICE: "JOKER! A Random Event is automatically triggered.",
+    NO_ACTIVE_ADVENTURE: "No active adventure. Create one first.",
+    DUNGEON_CREATED: "Dungeon created and linked to the adventure.",
+    REGION_CREATED: "Region created and linked to the adventure.",
+    DECK_REMAINING: "Cards remaining"
+  },
+  EXPLORATION: {
+    DUNGEON_TITLE: "Dungeon Tracker",
+    HEX_TITLE: "Hex Exploration",
+    APPEARANCE: "Appearance / Visual Theme",
+    FUNCTION: "Function / Purpose",
+    COMMON_TERRAIN: "Common Terrain",
+    UNCOMMON_TERRAIN: "Uncommon Terrain",
+    RARE_TERRAIN: "Rare Terrain",
+    CURRENT_ROOM: "Current room",
+    EXPLORE_NEXT: "Explore new area",
+    NO_EXITS: "No exits remaining in this room.",
+    BACKTRACK: "Return to: ",
+    MOVE: "Move:",
+    PATH_MAP: "Route Map:",
+    ADD_NOTES: "Add notes...",
+    NO_DUNGEON: "No active dungeon. Use the command to create one.",
+    NO_REGION: "No active region. Use the command to create one.",
+    NO_EXPLORATION: "No active explorations. Use the control panel to start one."
   },
   TABLES: {
     COMPLICATIONS: [
-      "Hostile forces (an enemy or group opposes you)",
-      "Obstacle (something blocks physical path or progress)",
-      "Wouldn't it suck if... (ironic or unforeseen complication)",
-      "NPC acts (a character takes the initiative)",
-      "Not everything is as it seems (hidden revelation)",
-      "As planned (no immediate setbacks)"
+      "Hostile forces oppose you",
+      "An obstacle blocks your path",
+      "Wouldn't it suck if\u2026",
+      "An NPC acts suddenly",
+      "Not everything is as it seems",
+      "Things go as planned"
     ],
     ALTERED: {
       "1": "An important detail of the scene is improved or worsened in some way",
       "2": "The environment is different",
       "3": "Unexpected NPCs are present",
       "4": "Add a **Scene Complication**",
-      "5": "Add a Beat Move",
-      "6": "Add a Random Event"
+      "5": "Add a **Beat Move**",
+      "6": "Add a **Random Event**"
     },
-    ACTIONS: {
-      "2": "Seek",
-      "3": "Oppose",
-      "4": "Communicate",
-      "5": "Move",
-      "6": "Harm",
-      "7": "Create",
-      "8": "Reveal",
-      "9": "Command",
-      "10": "Take",
-      "J": "Protect",
-      "Q": "Assist",
-      "K": "Transform",
-      "A": "Deceive"
-    },
-    DETAILS: {
-      "2": "Small",
-      "3": "Large",
-      "4": "Ancient",
-      "5": "Recent",
-      "6": "Valuable",
-      "7": "Worthless",
-      "8": "Dangerous",
-      "9": "Unsavory",
-      "10": "Important",
-      "J": "Simple",
-      "Q": "Complex",
-      "K": "Magical",
-      "A": "Mundane"
-    },
-    THEMES: {
-      "2": "Peace",
-      "3": "Conflict",
-      "4": "Power",
-      "5": "Time",
-      "6": "Fear",
-      "7": "Death",
-      "8": "Life",
-      "9": "Money",
-      "10": "Knowledge",
-      "J": "Love",
-      "Q": "War",
-      "K": "Fate",
-      "A": "Chaos"
-    },
-    DOMAINS: {
-      "Hearts": "Mystic (Feelings, magic, health, spiritual)",
-      "Clubs": "Technical (Tools, mind, plans, science)",
-      "Diamonds": "Social (People, relationships, trade, law)",
-      "Spades": "Physical (Combat, environment, objects, strength)"
-    },
-    GM_MOVES_BEAT: [
-      "Foreshadow trouble",
-      "Offer an opportunity",
-      "Reveal a new detail",
-      "Advance a threat",
-      "Put someone in a spot",
-      "Announce an imminent danger"
-    ],
-    GM_MOVES_FAILURE: [
-      "Cause harm",
-      "Spend resources",
-      "Separate them",
-      "Turn their move against them",
-      "Show the downsides of their class/gear",
-      "Make a threat move"
-    ],
     PLOT_TWIST: [
       "An ally turns out to be a traitor",
       "The goal is not what it seemed",
@@ -336,15 +413,173 @@ var en = {
       ATMOSPHERE: ["Tense", "Melancholic", "Oppressive", "Hopeful", "Mysterious", "Chaotic"],
       WEATHER: ["Heavy rain", "Thick fog", "Scorching sun", "Freezing wind", "Thunderstorm", "Clear skies"]
     },
+    ACTIONS: {
+      "2": "Seek",
+      "3": "Oppose",
+      "4": "Communicate",
+      "5": "Move",
+      "6": "Harm",
+      "7": "Create",
+      "8": "Reveal",
+      "9": "Command",
+      "10": "Take",
+      "J": "Protect",
+      "Q": "Help",
+      "K": "Transform",
+      "A": "Deceive"
+    },
+    DETAILS: {
+      "2": "Small",
+      "3": "Large",
+      "4": "Old",
+      "5": "New",
+      "6": "Mundane",
+      "7": "Simple",
+      "8": "Complex",
+      "9": "Bland",
+      "10": "Special",
+      "J": "Unexpected",
+      "Q": "Exotic",
+      "K": "Worthy",
+      "A": "Unique"
+    },
+    THEMES: {
+      "2": "Immediate Need",
+      "3": "Allies",
+      "4": "Community",
+      "5": "History",
+      "6": "Future Plans",
+      "7": "Enemies",
+      "8": "Knowledge",
+      "9": "Rumors",
+      "10": "Plot Arc",
+      "J": "Recent Events",
+      "Q": "Equipment",
+      "K": "Faction",
+      "A": "The PCs"
+    },
+    DOMAINS: {
+      "Clubs": "Physical (appearance, existence)",
+      "Diamonds": "Technical (mental, function)",
+      "Spades": "Mystic (meaning, capacity)",
+      "Hearts": "Social (personal, connection)"
+    },
+    GM_MOVES_BEAT: [
+      "Foreshadow a problem",
+      "Reveal a new detail",
+      "An NPC takes action",
+      "Advance a thread",
+      "Advance a plot",
+      "Add a Random Event to the scene"
+    ],
+    GM_MOVES_FAILURE: [
+      "Cause harm",
+      "Put someone in a spot",
+      "Offer a choice",
+      "Advance a thread",
+      "Reveal an uncomfortable truth",
+      "Foreshadow a problem"
+    ],
+    NPC_IDENTITY: {
+      "2": "Outlaw",
+      "3": "Wanderer",
+      "4": "Merchant",
+      "5": "Commoner",
+      "6": "Soldier",
+      "7": "Trader",
+      "8": "Specialist",
+      "9": "Entertainer",
+      "10": "Retainer",
+      "J": "Leader",
+      "Q": "Mystic",
+      "K": "Adventurer",
+      "A": "Knight"
+    },
+    NPC_OBJECTIVE: {
+      "2": "Obtain",
+      "3": "Learn",
+      "4": "Harm",
+      "5": "Restore",
+      "6": "Find",
+      "7": "Travel",
+      "8": "Protect",
+      "9": "Enrich",
+      "10": "Avenge",
+      "J": "Duty",
+      "Q": "Escape",
+      "K": "Create",
+      "A": "Serve"
+    },
     HOOKS: {
       TITLE: "Plot Hook",
       GOAL_LABEL: "Goal",
       ADVERSARY_LABEL: "Adversaries",
       REWARD_LABEL: "Rewards",
-      GOAL: ["Eliminate a threat", "Learn the truth", "Recover something of value", "Escort or delivery for safety", "Restore something broken", "Save a clear ally in danger"],
-      ADVERSARY: ["A powerful organization", "Outlaws", "Guardians", "Local population", "Hordes or enemy forces", "A new or recurring villain"],
-      REWARD: ["Money or goods", "Money or goods", "Knowledge or Secrets", "Help an ally", "Advance a plot arc", "A unique object of power"]
-    }
+      GOAL: [
+        "Eliminate a threat",
+        "Learn the truth",
+        "Recover something of value",
+        "Escort or deliver for safety",
+        "Restore something broken",
+        "Save an ally in danger"
+      ],
+      ADVERSARY: [
+        "A powerful organization",
+        "Outlaws",
+        "Guardians",
+        "Local population",
+        "Hordes or enemy forces",
+        "A new or recurring villain"
+      ],
+      REWARD: [
+        "Money or goods",
+        "Money or goods",
+        "Knowledge or Secrets",
+        "Help an ally",
+        "Advance a plot arc",
+        "A unique object of power"
+      ]
+    },
+    DUNGEON_LOCATIONS: [
+      "Typical area",
+      "Transition area",
+      "Common room or meeting place",
+      "Work area or utilities",
+      "Area with a special feature",
+      "Location for a special purpose"
+    ],
+    DUNGEON_ENCOUNTERS: [
+      "Nothing",
+      "Nothing",
+      "Hostile enemies",
+      "Hostile enemies",
+      "An obstacle blocks the path",
+      "Unique adversary or NPC"
+    ],
+    DUNGEON_OBJECTS: [
+      "Nothing, or common objects",
+      "Nothing, or common objects",
+      "An interesting clue or object",
+      "Device, key, or useful tool",
+      "Something valuable",
+      "Special or strange object"
+    ],
+    HEX_CONTENTS: [
+      "Nothing notable",
+      "Nothing notable",
+      "Nothing notable",
+      "Nothing notable",
+      "Nothing notable",
+      "TRAIT"
+    ],
+    HEX_TRAITS: [
+      "Notable structure",
+      "Dangerous hazard",
+      "Settlement",
+      "Strange natural feature",
+      "New region",
+      "Enter Dungeon Tracker"
+    ]
   }
 };
 
@@ -363,7 +598,61 @@ var es = {
     LANGUAGE_DESC: "Selecciona el idioma del plugin.",
     OPEN_CONTROL: "Abrir panel de control",
     OPEN_HISTORY: "Abrir historial",
-    OPEN_EXPLORATION: "Abrir rastreador de exploraci\xF3n"
+    OPEN_EXPLORATION: "Abrir rastreador de exploraci\xF3n",
+    DATA_MANAGEMENT: "Gesti\xF3n de Datos",
+    HISTORY_LIMIT: "L\xEDmite de historial",
+    CLEAR_HISTORY: "Limpiar historial",
+    CLEAR_BTN: "Limpiar",
+    CLEAR_CONFIRM: "\xBFLimpiar historial? Esta acci\xF3n no se puede deshacer.",
+    SECTION_INTERFACE: "Interfaz",
+    DEFAULT_TAB: "Tab por defecto",
+    DEFAULT_TAB_DESC: "Qu\xE9 tab se muestra al abrir el panel de control.",
+    COMPACT_HISTORY: "Modo compacto",
+    COMPACT_HISTORY_DESC: "Cards m\xE1s peque\xF1as en el historial para ver m\xE1s entradas a la vez.",
+    ACCENT_COLOR: "Color de acento",
+    ACCENT_COLOR_DESC: "Color principal de la interfaz. Por defecto: #8b5cf6 (violeta).",
+    HISTORY_ORDER: "Orden del historial",
+    HISTORY_ORDER_DESC: "C\xF3mo ordenar las entradas del historial.",
+    NEWEST_FIRST: "M\xE1s reciente primero",
+    OLDEST_FIRST: "M\xE1s antiguo primero",
+    TIMESTAMP_FORMAT: "Formato de timestamp",
+    TIMESTAMP_FORMAT_DESC: "C\xF3mo mostrar la hora en cada entrada del historial.",
+    TIMESTAMP_TIME: "Hora (HH:MM)",
+    TIMESTAMP_DATETIME: "Fecha y hora",
+    TIMESTAMP_RELATIVE: 'Relativo ("hace 5 min")',
+    SECTION_INSERT: "Inserci\xF3n de resultados",
+    INSERT_FORMAT: "Formato de inserci\xF3n",
+    INSERT_FORMAT_DESC: "C\xF3mo se insertan los resultados en las notas.",
+    INSERT_PLAIN: "Markdown plano",
+    INSERT_CALLOUT: "Callout de Obsidian (> [!oracle])",
+    INSERT_ANSWER: "Solo respuesta (sin raw)",
+    SHOW_RAW: "Mostrar tiradas raw",
+    SHOW_RAW_DESC: "Incluir el resultado de dados/cartas (ej: 1d6=4) en el texto insertado.",
+    SHOW_DOMAIN: "Mostrar dominio/palo",
+    SHOW_DOMAIN_DESC: "Mostrar el dominio (F\xEDsico, Social\u2026) en resultados de foco.",
+    SECTION_ORACLES: "Or\xE1culos",
+    DEFAULT_LIKELIHOOD: "Probabilidad por defecto",
+    DEFAULT_LIKELIHOOD_DESC: "Nivel de probabilidad preseleccionado al abrir el or\xE1culo S\xED/No.",
+    HEX_EVENT_THRESHOLD: "Umbral de evento en hex",
+    HEX_EVENT_THRESHOLD_DESC: "Un evento se dispara cuando la tirada d6 alcanza este valor o m\xE1s. Por defecto: 5 (OPSE v1.6).",
+    SECTION_SESSION: "Sesi\xF3n y datos",
+    EXPORT_FORMAT: "Formato de exportaci\xF3n",
+    EXPORT_FORMAT_DESC: "Formato del archivo al exportar la sesi\xF3n.",
+    EXPORT_MD: "Markdown (.md)",
+    EXPORT_JSON: "JSON (.json)",
+    RESET_DECK: "Resetear baraja al cambiar aventura",
+    RESET_DECK_DESC: "Si est\xE1 activado, la baraja se reinicia cada vez que se activa una aventura diferente.",
+    AUTO_OPEN_EXPLORATION: "Abrir exploraci\xF3n autom\xE1ticamente",
+    AUTO_OPEN_EXPLORATION_DESC: "Abrir la vista de exploraci\xF3n al crear una mazmorra o regi\xF3n hexagonal.",
+    SECTION_ABOUT: "Acerca de",
+    ABOUT_VERSION: "Versi\xF3n",
+    ABOUT_AUTHOR: "Autor",
+    ABOUT_BASED_ON: "Basado en",
+    ABOUT_LICENSE: "Licencia",
+    ABOUT_OPSE_DESC: "One Page Solo Engine v1.6 por Karl Hendricks",
+    ABOUT_RESET_DEFAULTS: "Restaurar valores por defecto",
+    ABOUT_RESET_CONFIRM: "\xBFRestaurar toda la configuraci\xF3n a los valores por defecto? El historial y las aventuras no se ver\xE1n afectados.",
+    RESET_BTN: "Restaurar"
   },
   ADVENTURE: {
     NEW: "Nueva Aventura",
@@ -432,7 +721,22 @@ var es = {
     IMPROBABLE: "Improbable (5+)",
     ASK: "Preguntar",
     HOW_MUCH: "\xBFCu\xE1nto? / \xBFQu\xE9 nivel?",
-    SCALES: ["Escaso", "Bajo", "Normal", "Notable", "Extraordinario", "Extremo"]
+    THEME: "Tema",
+    CMD_HOW_MUCH: "Cu\xE1nto/Nivel",
+    CMD_BEAT_MOVE: "Movimiento de Ritmo",
+    CMD_FAILURE_MOVE: "Movimiento de Fallo",
+    CMD_FOCUS_ACTION: "Foco de Acci\xF3n",
+    CMD_FOCUS_DETAIL: "Foco de Detalle",
+    CMD_FOCUS_THEME: "Foco de Tema",
+    CMD_FOCUS_DOUBLE: "Foco Doble (Acci\xF3n + Detalle)",
+    SCALES: [
+      "Sorprendentemente escaso",
+      "Menos de lo esperado",
+      "Aproximadamente la media",
+      "Aproximadamente la media",
+      "M\xE1s de lo esperado",
+      "Extraordinario"
+    ]
   },
   DASHBOARD: {
     TITLE: "Dashboard de OPSE",
@@ -446,7 +750,22 @@ var es = {
     NO_HISTORY: "Sin historial a\xFAn.",
     BARAJAR: "Barajar",
     EXPORTAR: "Exportar Log",
-    SHUFFLE_SUCCESS: "Baraja barajada."
+    SHUFFLE_SUCCESS: "Baraja barajada.",
+    EXPLORATION: "Exploraci\xF3n",
+    DUNGEON_BTN: "Mazmorra",
+    HEX_BTN: "Regi\xF3n Hex",
+    EXPLORE_BTN: "Explorar sala",
+    FILTER_ALL: "Todos",
+    FILTER_LABEL: "Filtrar:",
+    DECK_INFO: "Baraja:",
+    TAB_DUNGEON: "Mazmorra",
+    TAB_HEX: "Hex\xE1gonos",
+    TAB_SCENE: "Escena",
+    TAB_ORACLE: "Or\xE1culo",
+    TAB_GENERATORS: "Generar",
+    TAB_EXPLORE: "Explorar",
+    TAB_SESSION: "Sesi\xF3n",
+    GM_MOVES: "Movimientos DJ"
   },
   METADATA: {
     ANSWER: "Respuesta",
@@ -468,15 +787,38 @@ var es = {
     PIN: "Fijar",
     UNPIN: "Desfijar",
     COPIED: "Copiado al portapapeles",
-    JOKER_NOTICE: "\xA1COMOD\xCDN! Se dispara un Evento Aleatorio autom\xE1ticamente."
+    JOKER_NOTICE: "\xA1COMOD\xCDN! Se dispara un Evento Aleatorio autom\xE1ticamente.",
+    NO_ACTIVE_ADVENTURE: "No hay aventura activa. Crea una primero.",
+    DUNGEON_CREATED: "Mazmorra creada y vinculada a la aventura.",
+    REGION_CREATED: "Regi\xF3n creada y vinculada a la aventura.",
+    DECK_REMAINING: "Cartas restantes"
+  },
+  EXPLORATION: {
+    DUNGEON_TITLE: "Rastreador de Mazmorra",
+    HEX_TITLE: "Exploraci\xF3n Hexagonal",
+    APPEARANCE: "Apariencia / Tema visual",
+    FUNCTION: "Funci\xF3n / Prop\xF3sito",
+    COMMON_TERRAIN: "Terreno Com\xFAn",
+    UNCOMMON_TERRAIN: "Terreno Poco Com\xFAn",
+    RARE_TERRAIN: "Terreno Raro",
+    CURRENT_ROOM: "Sala actual",
+    EXPLORE_NEXT: "Explorar nueva \xE1rea",
+    NO_EXITS: "No quedan salidas en esta sala.",
+    BACKTRACK: "Volver a: ",
+    MOVE: "Moverse:",
+    PATH_MAP: "Mapa de Ruta:",
+    ADD_NOTES: "A\xF1adir notas...",
+    NO_DUNGEON: "No hay mazmorra activa. Usa el comando para crear una.",
+    NO_REGION: "No hay regi\xF3n activa. Usa el comando para crear una.",
+    NO_EXPLORATION: "Sin exploraciones activas. Usa el panel de control para iniciar una."
   },
   TABLES: {
     COMPLICATIONS: [
       "Fuerzas hostiles se oponen a ti",
       "Un obst\xE1culo bloquea tu camino",
-      "\xBFNo ser\xEDa una mierda si...",
+      "No ser\xEDa una mierda si\u2026",
       "Un PNJ act\xFAa repentinamente",
-      "No todo es lo que parece ",
+      "No todo es lo que parece",
       "Las cosas van como se planearon"
     ],
     ALTERED: {
@@ -484,8 +826,8 @@ var es = {
       "2": "El entorno es diferente",
       "3": "Hay presentes PNJs inesperados",
       "4": "A\xF1ade una **Complicaci\xF3n de Escena**",
-      "5": "A\xF1ade un Movimiento de Ritmo",
-      "6": "A\xF1ade un Evento Aleatorio"
+      "5": "A\xF1ade un **Movimiento de Ritmo**",
+      "6": "A\xF1ade un **Evento Aleatorio**"
     },
     PLOT_TWIST: [
       "Un aliado resulta ser un traidor",
@@ -507,74 +849,165 @@ var es = {
       "6": "Da\xF1ar",
       "7": "Crear",
       "8": "Revelar",
-      "9": "Comandar",
+      "9": "Mandar",
       "10": "Tomar",
       "J": "Proteger",
-      "Q": "Asistir",
+      "Q": "Ayudar",
       "K": "Transformar",
       "A": "Enga\xF1ar"
     },
     DETAILS: {
       "2": "Peque\xF1o",
       "3": "Grande",
-      "4": "Antiguo",
-      "5": "Reciente",
-      "6": "Valioso",
-      "7": "In\xFAtil",
-      "8": "Peligroso",
-      "9": "Desagradable",
-      "10": "Importante",
-      "J": "Simple",
-      "Q": "Complejo",
-      "K": "M\xE1gico",
-      "A": "Mundano"
+      "4": "Viejo",
+      "5": "Nuevo",
+      "6": "Mundano",
+      "7": "Simple",
+      "8": "Complejo",
+      "9": "Insulso",
+      "10": "Especial",
+      "J": "Inesperado",
+      "Q": "Ex\xF3tico",
+      "K": "Digno",
+      "A": "\xDAnico"
     },
     THEMES: {
-      "2": "Paz",
-      "3": "Conflicto",
-      "4": "Poder",
-      "5": "Tiempo",
-      "6": "Miedo",
-      "7": "Muerte",
-      "8": "Vida",
-      "9": "Dinero",
-      "10": "Conocimiento",
-      "J": "Amor",
-      "Q": "Guerra",
-      "K": "Destino",
-      "A": "Caos"
+      "2": "Necesidad Ya",
+      "3": "Aliados",
+      "4": "Comunidad",
+      "5": "Historia",
+      "6": "Planes Futuros",
+      "7": "Enemigos",
+      "8": "Conocimiento",
+      "9": "Rumores",
+      "10": "Arco Argumental",
+      "J": "Eventos Recientes",
+      "Q": "Equipo",
+      "K": "Facci\xF3n",
+      "A": "Los PJs"
     },
     DOMAINS: {
-      "Hearts": "M\xEDstico (Sentimientos, magia, salud, espiritual)",
-      "Clubs": "T\xE9cnico (Herramientas, mente, planes, ciencia)",
-      "Diamonds": "Social (Gente, relaciones, comercio, ley)",
-      "Spades": "F\xEDsico (Combate, entorno, objetos, fuerza)"
+      "Clubs": "F\xEDsico (apariencia, existencia)",
+      "Diamonds": "T\xE9cnico (mental, funcionamiento)",
+      "Spades": "M\xEDstico (significado, capacidad)",
+      "Hearts": "Social (personal, conexi\xF3n)"
     },
     GM_MOVES_BEAT: [
-      "Presentir problemas",
-      "Ofrecer una oportunidad",
-      "Revelar un detalle nuevo",
-      "Avanzar una amenaza",
-      "Poner a alguien en un aprieto",
-      "Anunciar un peligro inminente"
+      "Presagia un problema",
+      "Revela un nuevo detalle",
+      "Un PNJ entra en acci\xF3n",
+      "Avanza un hilo",
+      "Avanza una trama",
+      "A\xF1ade un Evento Aleatorio a la escena"
     ],
     GM_MOVES_FAILURE: [
-      "Causar da\xF1o",
-      "Gastar recursos",
-      "Separarlos",
-      "Girar su movimiento contra ellos",
-      "Mostrar las desventajas de su equipo/clase",
-      "Hacer un movimiento de amenaza"
+      "Causa da\xF1o",
+      "Pon a alguien en un aprieto",
+      "Ofrece una opci\xF3n",
+      "Avanza un hilo",
+      "Revela una verdad inc\xF3moda",
+      "Presagia un problema"
     ],
+    NPC_IDENTITY: {
+      "2": "Forajido",
+      "3": "Vagabundo",
+      "4": "Comerciante",
+      "5": "Plebeyo",
+      "6": "Soldado",
+      "7": "Mercante",
+      "8": "Especialista",
+      "9": "Animador",
+      "10": "Adherido",
+      "J": "Liderazgo",
+      "Q": "M\xEDstico",
+      "K": "Aventurero",
+      "A": "Caballero"
+    },
+    NPC_OBJECTIVE: {
+      "2": "Obtener",
+      "3": "Aprender",
+      "4": "Da\xF1ar",
+      "5": "Restaurar",
+      "6": "Encontrar",
+      "7": "Viajar",
+      "8": "Proteger",
+      "9": "Enriquecerse",
+      "10": "Vengarse",
+      "J": "Deber",
+      "Q": "Escapar",
+      "K": "Crear",
+      "A": "Servir"
+    },
     HOOKS: {
       TITLE: "Gancho Argumental",
       GOAL_LABEL: "Objetivo",
       ADVERSARY_LABEL: "Adversarios",
       REWARD_LABEL: "Recompensas",
-      GOAL: ["Elimina una amenaza", "Aprende la verdad", "Recupera algo de valor", "Escolta o entrega por seguridad", "Restaura algo roto", "Salva a un aliado en peligro"],
-      ADVERSARY: ["Una poderosa organizaci\xF3n", "Forajidos", "Guardianes", "Poblaci\xF3n local", "Hordas o fuerzas enemigas", "Un nuevo o recurrente villano"],
-      REWARD: ["Dinero o bienes", "Dinero o bienes", "Conocimientos o Secretos", "Ayuda a un aliado", "Avanza en un arco argumental", "Un objeto \xFAnico de poder"]
-    }
+      GOAL: [
+        "Elimina una amenaza",
+        "Aprende la verdad",
+        "Recupera algo de valor",
+        "Escolta o entrega por seguridad",
+        "Restaura algo roto",
+        "Salva a un aliado en peligro"
+      ],
+      ADVERSARY: [
+        "Una poderosa organizaci\xF3n",
+        "Forajidos",
+        "Guardianes",
+        "Poblaci\xF3n local",
+        "Hordas o fuerzas enemigas",
+        "Un nuevo o recurrente villano"
+      ],
+      REWARD: [
+        "Dinero o bienes",
+        "Dinero o bienes",
+        "Conocimientos o Secretos",
+        "Ayuda a un aliado",
+        "Avanza en un arco argumental",
+        "Un objeto \xFAnico de poder"
+      ]
+    },
+    DUNGEON_LOCATIONS: [
+      "\xC1rea t\xEDpica",
+      "\xC1rea de transici\xF3n",
+      "Sala de estar o lugar de reuni\xF3n",
+      "\xC1rea de trabajo o \xFAtiles",
+      "\xC1rea con un rasgo especial",
+      "Localizaci\xF3n para un prop\xF3sito especial"
+    ],
+    DUNGEON_ENCOUNTERS: [
+      "Nada",
+      "Nada",
+      "Enemigos hostiles",
+      "Enemigos hostiles",
+      "Un obst\xE1culo bloquea el camino",
+      "Adversario o PNJ \xFAnico"
+    ],
+    DUNGEON_OBJECTS: [
+      "Nada, o objetos comunes",
+      "Nada, o objetos comunes",
+      "Una interesante pista u objeto",
+      "Dispositivo, llave, o herramienta \xFAtil",
+      "Algo valioso",
+      "Objeto especial o extra\xF1o"
+    ],
+    HEX_CONTENTS: [
+      "Nada notable",
+      "Nada notable",
+      "Nada notable",
+      "Nada notable",
+      "Nada notable",
+      "RASGO"
+    ],
+    HEX_TRAITS: [
+      "Estructura notable",
+      "Riesgo peligroso",
+      "Asentamiento",
+      "Rasgo natural extra\xF1o",
+      "Nueva regi\xF3n",
+      "Entra a un Rastreador de Mazmorra"
+    ]
   }
 };
 
@@ -593,6 +1026,71 @@ var I18n = class {
 __publicField(I18n, "lang", "en");
 var t = () => I18n.t();
 
+// src/core/deck.ts
+var Deck = class {
+  constructor(useJokers = false) {
+    __publicField(this, "cards", []);
+    __publicField(this, "discard", []);
+    __publicField(this, "useJokers", false);
+    this.useJokers = useJokers;
+    this.reset();
+  }
+  reset() {
+    this.cards = [];
+    this.discard = [];
+    const suits = ["Hearts" /* Hearts */, "Diamonds" /* Diamonds */, "Clubs" /* Clubs */, "Spades" /* Spades */];
+    const ranks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+    for (const suit of suits) {
+      for (let i = 0; i < ranks.length; i++) {
+        this.cards.push({ rank: ranks[i], suit, value: i + 1 });
+      }
+    }
+    if (this.useJokers) {
+      this.cards.push({ rank: "Joker", suit: "Joker" /* Joker */, value: 0 });
+      this.cards.push({ rank: "Joker", suit: "Joker" /* Joker */, value: 0 });
+    }
+    this.shuffle();
+  }
+  shuffle() {
+    for (let i = this.cards.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [this.cards[i], this.cards[j]] = [this.cards[j], this.cards[i]];
+    }
+  }
+  draw() {
+    if (this.cards.length === 0) {
+      this.cards = [...this.discard];
+      this.discard = [];
+      this.shuffle();
+    }
+    if (this.cards.length === 0) {
+      this.reset();
+    }
+    const card = this.cards.pop();
+    this.discard.push(card);
+    if (card.suit === "Joker" /* Joker */) {
+      this.reset();
+    }
+    return card;
+  }
+  getRemainingCount() {
+    return this.cards.length;
+  }
+  getDiscardCount() {
+    return this.discard.length;
+  }
+  getState() {
+    return {
+      cards: [...this.cards],
+      discard: [...this.discard]
+    };
+  }
+  setState(cards, discard) {
+    this.cards = [...cards];
+    this.discard = [...discard];
+  }
+};
+
 // src/settings.ts
 var OPSESettingTab = class extends import_obsidian.PluginSettingTab {
   constructor(app, plugin) {
@@ -603,32 +1101,162 @@ var OPSESettingTab = class extends import_obsidian.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    const strings = t().SETTINGS;
-    containerEl.createEl("h2", { text: strings.TITLE });
-    new import_obsidian.Setting(containerEl).setName(strings.LANGUAGE).setDesc(strings.LANGUAGE_DESC).addDropdown((dropdown) => dropdown.addOption("en", "English").addOption("es", "Espa\xF1ol").setValue(this.plugin.settings.language).onChange(async (value) => {
-      this.plugin.settings.language = value;
-      I18n.setLanguage(value);
+    containerEl.addClass("opse-settings");
+    const s = t().SETTINGS;
+    containerEl.createEl("h2", { text: s.TITLE, cls: "opse-settings-title" });
+    this.sectionHeader(containerEl, "" + s.LANGUAGE);
+    new import_obsidian.Setting(containerEl).setName(s.LANGUAGE).setDesc(s.LANGUAGE_DESC).addDropdown((d) => d.addOption("en", "English").addOption("es", "Espa\xF1ol").setValue(this.plugin.settings.language).onChange(async (v) => {
+      const val = v;
+      this.plugin.settings.language = val;
+      I18n.setLanguage(val);
       await this.plugin.saveSettings();
       this.display();
     }));
-    new import_obsidian.Setting(containerEl).setName(strings.RANDOM_MODE).setDesc(strings.RANDOM_MODE_DESC).addDropdown((dropdown) => dropdown.addOption("dice", strings.DICE).addOption("cards", strings.CARDS).addOption("persistent_deck", strings.PERSISTENT_DECK).setValue(this.plugin.settings.randomMode).onChange(async (value) => {
-      this.plugin.settings.randomMode = value;
+    new import_obsidian.Setting(containerEl).setName(s.RANDOM_MODE).setDesc(s.RANDOM_MODE_DESC).addDropdown((d) => d.addOption("dice", s.DICE).addOption("cards", s.CARDS).addOption("persistent_deck", s.PERSISTENT_DECK).setValue(this.plugin.settings.randomMode).onChange(async (v) => {
+      const val = v;
+      this.plugin.settings.randomMode = val;
+      this.plugin.deck = new Deck(val !== "dice");
+      if (val !== "persistent_deck") {
+        this.plugin.settings.deckCards = null;
+        this.plugin.settings.deckDiscard = null;
+      }
       await this.plugin.saveSettings();
     }));
-    new import_obsidian.Setting(containerEl).setName(strings.AUTO_INSERT).setDesc(strings.AUTO_INSERT_DESC).addToggle((toggle) => toggle.setValue(this.plugin.settings.autoInsert).onChange(async (value) => {
-      this.plugin.settings.autoInsert = value;
+    new import_obsidian.Setting(containerEl).setName(s.AUTO_INSERT).setDesc(s.AUTO_INSERT_DESC).addToggle((tg) => tg.setValue(this.plugin.settings.autoInsert).onChange(async (v) => {
+      this.plugin.settings.autoInsert = v;
       await this.plugin.saveSettings();
     }));
-    containerEl.createEl("h3", { text: "Gesti\xF3n de Datos" });
-    new import_obsidian.Setting(containerEl).setName("L\xEDmite de historial").addSlider((slider) => slider.setLimits(10, 500, 10).setValue(this.plugin.settings.history.length > 100 ? this.plugin.settings.history.length : 100).onChange(async (value) => {
-      await this.plugin.historyManager.setMaxEntries(value);
+    this.sectionHeader(containerEl, "" + s.SECTION_INTERFACE);
+    new import_obsidian.Setting(containerEl).setName(s.DEFAULT_TAB).setDesc(s.DEFAULT_TAB_DESC).addDropdown((d) => {
+      d.addOption("scene", t().DASHBOARD.TAB_SCENE);
+      d.addOption("oracle", t().DASHBOARD.TAB_ORACLE);
+      d.addOption("generators", t().DASHBOARD.TAB_GENERATORS);
+      d.addOption("explore", t().DASHBOARD.TAB_EXPLORE);
+      d.addOption("session", t().DASHBOARD.TAB_SESSION);
+      d.setValue(this.plugin.settings.defaultTab);
+      d.onChange(async (v) => {
+        this.plugin.settings.defaultTab = v;
+        await this.plugin.saveSettings();
+      });
+      return d;
+    });
+    new import_obsidian.Setting(containerEl).setName(s.ACCENT_COLOR).setDesc(s.ACCENT_COLOR_DESC).addColorPicker((cp) => cp.setValue(this.plugin.settings.accentColor).onChange(async (v) => {
+      this.plugin.settings.accentColor = v;
+      this.plugin.applyAccentColor(v);
+      await this.plugin.saveSettings();
     }));
-    new import_obsidian.Setting(containerEl).setName("Limpiar historial").addButton((btn) => btn.setButtonText("Limpiar").setWarning().onClick(async () => {
-      if (confirm("\xBFLimpiar historial?")) {
+    new import_obsidian.Setting(containerEl).setName(s.COMPACT_HISTORY).setDesc(s.COMPACT_HISTORY_DESC).addToggle((tg) => tg.setValue(this.plugin.settings.compactHistory).onChange(async (v) => {
+      this.plugin.settings.compactHistory = v;
+      await this.plugin.saveSettings();
+      this.plugin.refreshViews();
+    }));
+    new import_obsidian.Setting(containerEl).setName(s.HISTORY_ORDER).setDesc(s.HISTORY_ORDER_DESC).addDropdown((d) => d.addOption("newest", s.NEWEST_FIRST).addOption("oldest", s.OLDEST_FIRST).setValue(this.plugin.settings.historyOrder).onChange(async (v) => {
+      this.plugin.settings.historyOrder = v;
+      await this.plugin.saveSettings();
+      this.plugin.refreshViews();
+    }));
+    new import_obsidian.Setting(containerEl).setName(s.TIMESTAMP_FORMAT).setDesc(s.TIMESTAMP_FORMAT_DESC).addDropdown((d) => d.addOption("time", s.TIMESTAMP_TIME).addOption("datetime", s.TIMESTAMP_DATETIME).addOption("relative", s.TIMESTAMP_RELATIVE).setValue(this.plugin.settings.timestampFormat).onChange(async (v) => {
+      this.plugin.settings.timestampFormat = v;
+      await this.plugin.saveSettings();
+      this.plugin.refreshViews();
+    }));
+    this.sectionHeader(containerEl, " " + s.SECTION_INSERT);
+    new import_obsidian.Setting(containerEl).setName(s.INSERT_FORMAT).setDesc(s.INSERT_FORMAT_DESC).addDropdown((d) => d.addOption("plain", s.INSERT_PLAIN).addOption("callout", s.INSERT_CALLOUT).addOption("answer-only", s.INSERT_ANSWER).setValue(this.plugin.settings.insertFormat).onChange(async (v) => {
+      this.plugin.settings.insertFormat = v;
+      await this.plugin.saveSettings();
+    }));
+    new import_obsidian.Setting(containerEl).setName(s.SHOW_RAW).setDesc(s.SHOW_RAW_DESC).addToggle((tg) => tg.setValue(this.plugin.settings.showRawRolls).onChange(async (v) => {
+      this.plugin.settings.showRawRolls = v;
+      await this.plugin.saveSettings();
+    }));
+    new import_obsidian.Setting(containerEl).setName(s.SHOW_DOMAIN).setDesc(s.SHOW_DOMAIN_DESC).addToggle((tg) => tg.setValue(this.plugin.settings.showDomain).onChange(async (v) => {
+      this.plugin.settings.showDomain = v;
+      await this.plugin.saveSettings();
+    }));
+    this.sectionHeader(containerEl, "" + s.SECTION_ORACLES);
+    new import_obsidian.Setting(containerEl).setName(s.DEFAULT_LIKELIHOOD).setDesc(s.DEFAULT_LIKELIHOOD_DESC).addDropdown((d) => d.addOption("probable", t().ORACLE.PROBABLE).addOption("even", t().ORACLE.EVEN).addOption("improbable", t().ORACLE.IMPROBABLE).setValue(this.plugin.settings.defaultLikelihood).onChange(async (v) => {
+      this.plugin.settings.defaultLikelihood = v;
+      await this.plugin.saveSettings();
+    }));
+    new import_obsidian.Setting(containerEl).setName(s.HEX_EVENT_THRESHOLD).setDesc(s.HEX_EVENT_THRESHOLD_DESC).addSlider((sl) => sl.setLimits(2, 6, 1).setValue(this.plugin.settings.hexEventThreshold).setDynamicTooltip().onChange(async (v) => {
+      this.plugin.settings.hexEventThreshold = v;
+      await this.plugin.saveSettings();
+    }));
+    this.sectionHeader(containerEl, "" + s.SECTION_SESSION);
+    new import_obsidian.Setting(containerEl).setName(s.EXPORT_FORMAT).setDesc(s.EXPORT_FORMAT_DESC).addDropdown((d) => d.addOption("markdown", s.EXPORT_MD).addOption("json", s.EXPORT_JSON).setValue(this.plugin.settings.exportFormat).onChange(async (v) => {
+      this.plugin.settings.exportFormat = v;
+      await this.plugin.saveSettings();
+    }));
+    new import_obsidian.Setting(containerEl).setName(s.AUTO_OPEN_EXPLORATION).setDesc(s.AUTO_OPEN_EXPLORATION_DESC).addToggle((tg) => tg.setValue(this.plugin.settings.autoOpenExploration).onChange(async (v) => {
+      this.plugin.settings.autoOpenExploration = v;
+      await this.plugin.saveSettings();
+    }));
+    new import_obsidian.Setting(containerEl).setName(s.RESET_DECK).setDesc(s.RESET_DECK_DESC).addToggle((tg) => tg.setValue(this.plugin.settings.resetDeckOnAdventureChange).onChange(async (v) => {
+      this.plugin.settings.resetDeckOnAdventureChange = v;
+      await this.plugin.saveSettings();
+    }));
+    this.sectionHeader(containerEl, s.DATA_MANAGEMENT);
+    new import_obsidian.Setting(containerEl).setName(s.HISTORY_LIMIT).addSlider((sl) => sl.setLimits(10, 500, 10).setValue(this.plugin.settings.historyMaxEntries).setDynamicTooltip().onChange(async (v) => {
+      this.plugin.settings.historyMaxEntries = v;
+      await this.plugin.historyManager.setMaxEntries(v);
+    }));
+    new import_obsidian.Setting(containerEl).setName(s.CLEAR_HISTORY).addButton((btn) => btn.setButtonText(s.CLEAR_BTN).setWarning().onClick(async () => {
+      if (confirm(s.CLEAR_CONFIRM)) {
         await this.plugin.historyManager.clearHistory();
         this.plugin.refreshViews();
       }
     }));
+    new import_obsidian.Setting(containerEl).setName(s.ABOUT_RESET_DEFAULTS).setDesc(s.ABOUT_RESET_CONFIRM).addButton((btn) => btn.setButtonText(s.RESET_BTN).setWarning().onClick(async () => {
+      if (confirm(s.ABOUT_RESET_CONFIRM)) {
+        const keep = {
+          adventures: this.plugin.settings.adventures,
+          activeAdventureId: this.plugin.settings.activeAdventureId,
+          history: this.plugin.settings.history,
+          dungeons: this.plugin.settings.dungeons,
+          regions: this.plugin.settings.regions
+        };
+        this.plugin.settings = Object.assign({}, DEFAULT_SETTINGS, keep);
+        this.plugin.applyAccentColor(DEFAULT_SETTINGS.accentColor);
+        await this.plugin.saveSettings();
+        this.plugin.refreshViews();
+        this.display();
+      }
+    }));
+    this.sectionHeader(containerEl, "" + s.SECTION_ABOUT);
+    const aboutCard = containerEl.createDiv({ cls: "opse-settings-about" });
+    const logoRow = aboutCard.createDiv({ cls: "opse-about-logo-row" });
+    logoRow.createDiv({ cls: "opse-about-logo", text: "\u{1F3B2}" });
+    const logoText = logoRow.createDiv({ cls: "opse-about-logo-text" });
+    logoText.createEl("strong", { text: "OPSE Oracle" });
+    logoText.createSpan({ text: " v1.0.0", cls: "opse-about-version" });
+    const grid = aboutCard.createDiv({ cls: "opse-about-grid" });
+    this.aboutRow(grid, s.ABOUT_AUTHOR, "Snifer \xB7 Bastion del Dinosaurio");
+    this.aboutRow(grid, s.ABOUT_BASED_ON, s.ABOUT_OPSE_DESC);
+    this.aboutRow(grid, s.ABOUT_LICENSE, "MIT (plugin) \xB7 CC-BY-SA 4.0 (OPSE tables)");
+    const linksRow = aboutCard.createDiv({ cls: "opse-about-links" });
+    linksRow.createEl("a", {
+      text: "\u{1F4E6} GitHub",
+      href: "https://github.com/snifer/OPSE-Oracle",
+      cls: "opse-about-link"
+    });
+    linksRow.createEl("a", {
+      text: "\u{1F3B2} OPSE",
+      href: "https://inflatablestudios.itch.io/",
+      cls: "opse-about-link"
+    });
+    linksRow.createEl("a", {
+      text: "\u2615 Ko-fi",
+      href: "https://ko-fi.com/bastiondeldino",
+      cls: "opse-about-link"
+    });
+  }
+  sectionHeader(parent, title) {
+    parent.createEl("h3", { text: title, cls: "opse-settings-section" });
+  }
+  aboutRow(parent, label, value) {
+    const row = parent.createDiv({ cls: "opse-about-row" });
+    row.createSpan({ text: label, cls: "opse-about-label" });
+    row.createSpan({ text: value, cls: "opse-about-value" });
   }
 };
 
@@ -648,8 +1276,9 @@ var HistoryManager = class {
     await this.saveCallback(this.history);
   }
   cleanup() {
-    if (this.history.length <= this.maxEntries)
+    if (this.history.length <= this.maxEntries) {
       return;
+    }
     const pinned = this.history.filter((e) => e.pinned);
     const unpinned = this.history.filter((e) => !e.pinned);
     const remainingUnpinnedCount = Math.max(0, this.maxEntries - pinned.length);
@@ -707,7 +1336,7 @@ var AdventureModal = class extends import_obsidian2.Modal {
       finalPath = (0, import_obsidian2.normalizePath)(`${this.title || defaultTitle} (${counter}).md`);
       counter++;
     }
-    let content = `---
+    const content = `---
 opse-adventure: true
 title: "${this.title || defaultTitle}"
 system: "${this.system}"
@@ -730,6 +1359,9 @@ ${strings.SCENE_HEADER}
 
 `;
     const newFile = await this.app.vault.create(finalPath, content);
+    if (this.plugin.settings.resetDeckOnAdventureChange) {
+      this.plugin.deck = new Deck(this.plugin.settings.randomMode !== "dice");
+    }
     await this.plugin.adventureManager.createAdventure(this.title || defaultTitle, this.system, this.genre, newFile.path);
     const leaf = this.app.workspace.getLeaf(false);
     await leaf.openFile(newFile);
@@ -747,18 +1379,21 @@ var import_obsidian4 = require("obsidian");
 var OPSE = class {
   static resolveYesNo(d1, d2, likelihood) {
     const strings = t().ORACLE;
-    let successThreshold = 4;
-    if (likelihood === "probable")
-      successThreshold = 3;
-    if (likelihood === "improbable")
-      successThreshold = 5;
-    const isSuccess = d1 >= successThreshold;
-    const answer = isSuccess ? strings.YES : strings.NO;
+    let threshold = 4;
+    if (likelihood === "probable") {
+      threshold = 3;
+    }
+    if (likelihood === "improbable") {
+      threshold = 5;
+    }
+    const answer = d1 >= threshold ? strings.YES : strings.NO;
     let modifier;
-    if (d2 === 1)
+    if (d2 === 1) {
       modifier = strings.BUT;
-    if (d2 === 6)
+    }
+    if (d2 === 6) {
       modifier = strings.AND;
+    }
     return { answer, modifier };
   }
   static getAction(rank) {
@@ -773,11 +1408,17 @@ var OPSE = class {
   static getDomain(suit) {
     return t().TABLES.DOMAINS[suit] || "???";
   }
-  static getComplication(index) {
-    return t().TABLES.COMPLICATIONS[index] || "???";
+  static getNPCIdentity(rank) {
+    return t().TABLES.NPC_IDENTITY[rank] || "???";
+  }
+  static getNPCObjective(rank) {
+    return t().TABLES.NPC_OBJECTIVE[rank] || "???";
   }
   static getAltered(index) {
     return t().TABLES.ALTERED[index.toString()] || "???";
+  }
+  static getComplication(index) {
+    return t().TABLES.COMPLICATIONS[index] || "???";
   }
   static getBeatMove(index) {
     return t().TABLES.GM_MOVES_BEAT[index] || "???";
@@ -793,6 +1434,21 @@ var OPSE = class {
   }
   static getWeather(index) {
     return t().TABLES.FLAVOR.WEATHER[index] || "???";
+  }
+  static getDungeonLocation(index) {
+    return t().TABLES.DUNGEON_LOCATIONS[index] || "???";
+  }
+  static getDungeonEncounter(index) {
+    return t().TABLES.DUNGEON_ENCOUNTERS[index] || "???";
+  }
+  static getDungeonObject(index) {
+    return t().TABLES.DUNGEON_OBJECTS[index] || "???";
+  }
+  static getHexContent(index) {
+    return t().TABLES.HEX_CONTENTS[index] || "???";
+  }
+  static getHexTrait(index) {
+    return t().TABLES.HEX_TRAITS[index] || "???";
   }
 };
 
@@ -816,12 +1472,15 @@ var Random = class {
     } else {
       const rankRoll = this.d(12);
       let rank = rankRoll.toString();
-      if (rankRoll === 11)
+      if (rankRoll === 11) {
         rank = "J";
-      if (rankRoll === 12)
+      }
+      if (rankRoll === 12) {
         rank = this.d(2) === 1 ? "Q" : "K";
-      if (rankRoll === 1)
+      }
+      if (rankRoll === 1) {
         rank = "A";
+      }
       const suitRoll = this.d(4);
       const suits = ["Clubs" /* Clubs */, "Diamonds" /* Diamonds */, "Spades" /* Spades */, "Hearts" /* Hearts */];
       return { rank, suit: suits[suitRoll - 1] };
@@ -863,13 +1522,17 @@ var MarkdownUtils = class {
     }
   }
   static async smartInsert(app, plugin, content) {
-    if (!plugin.settings.autoInsert)
+    if (!plugin.settings.autoInsert) {
       return;
+    }
     const active = plugin.adventureManager.getActiveAdventure();
     await this.insertAtCursor(app, content, active == null ? void 0 : active.activeNotePath);
   }
-  static formatResult(title, answer, raw, footer, interpretation) {
-    let text = "";
+  static formatResult(title, answer, raw, footer, interpretation, plugin) {
+    var _a, _b, _c, _d, _e, _f;
+    const format = (_b = (_a = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _a.insertFormat) != null ? _b : "plain";
+    const showRaw = (_d = (_c = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _c.showRawRolls) != null ? _d : true;
+    const showDomain = (_f = (_e = plugin == null ? void 0 : plugin.settings) == null ? void 0 : _e.showDomain) != null ? _f : true;
     let label = title;
     let question = "";
     if (title.includes(":")) {
@@ -877,20 +1540,55 @@ var MarkdownUtils = class {
       label = parts[0].trim();
       question = parts.slice(1).join(":").trim();
     }
+    if (format === "callout") {
+      return MarkdownUtils.formatCallout(label, question, answer, raw, footer, interpretation, showRaw, showDomain);
+    }
+    if (format === "answer-only") {
+      return `**${answer}**
+
+`;
+    }
+    let text = "";
     if (question) {
       text += `? ${question}
 `;
-    } else if (label && label !== "Result") {
     }
-    text += `${answer} <small>${raw}</small>
+    if (showRaw) {
+      text += `${answer} <small>${raw}</small>
 `;
-    if (footer) {
+    } else {
+      text += `${answer}
+`;
+    }
+    if (footer && showDomain) {
       text += `*${footer}*
 `;
     }
     text += `> ${interpretation || ""}
 
 `;
+    return text;
+  }
+  static formatCallout(label, question, answer, raw, footer, interpretation, showRaw = true, showDomain = true) {
+    const calloutType = label.toLowerCase().replace(/\s+/g, "-") || "oracle";
+    let text = `> [!${calloutType}]`;
+    if (question) {
+      text += ` ${question}`;
+    }
+    text += `
+> **${answer}**`;
+    if (showRaw) {
+      text += ` <small>${raw}</small>`;
+    }
+    if (footer && showDomain) {
+      text += `
+> *${footer}*`;
+    }
+    if (interpretation) {
+      text += `
+> ${interpretation}`;
+    }
+    text += "\n\n";
     return text;
   }
   static formatSection(title) {
@@ -924,13 +1622,13 @@ var SceneModal = class extends import_obsidian4.Modal {
     const strings = t().SCENE;
     const complicationRoll = Random.d(6);
     const complication = OPSE.getComplication(complicationRoll - 1);
-    let title = `${strings.NEW}: ${this.objective || "..."}`;
-    let content = `**${strings.LOCATION}:** ${this.location || "..."}
+    const title = `${strings.NEW}: ${this.objective || "..."}`;
+    const content = `**${strings.LOCATION}:** ${this.location || "..."}
 **${strings.OBJECTIVE}:** ${this.objective || "..."}
 
 **${strings.COMPLICATION}:** ${complication}`;
     const meta = t().METADATA;
-    let raw = `(1d6=${complicationRoll} [${meta.COMPLICATION}])`;
+    const raw = `(1d6=${complicationRoll} [${meta.COMPLICATION}])`;
     await this.plugin.historyManager.addEntry({
       id: crypto.randomUUID(),
       answer: complication,
@@ -958,25 +1656,27 @@ var OracleModal = class extends import_obsidian5.Modal {
     this.plugin = plugin;
   }
   onOpen() {
+    var _a;
     const { contentEl } = this;
     const strings = t().ORACLE;
     contentEl.createEl("h2", { text: strings.YESNO_TITLE });
     new import_obsidian5.Setting(contentEl).setName(strings.QUESTION).setDesc(strings.QUESTION_DESC).addText((text) => text.onChange((value) => this.question = value));
     const buttonRow = contentEl.createDiv({ cls: "opse-likelihood-row" });
-    const btnProbable = buttonRow.createEl("button", { text: strings.PROBABLE, cls: "mod-cta" });
-    btnProbable.addEventListener("click", () => {
-      this.askOracle("probable");
-      this.close();
-    });
-    const btnEven = buttonRow.createEl("button", { text: strings.EVEN, cls: "mod-cta" });
-    btnEven.addEventListener("click", () => {
-      this.askOracle("even");
-      this.close();
-    });
-    const btnImprobable = buttonRow.createEl("button", { text: strings.IMPROBABLE, cls: "mod-cta" });
-    btnImprobable.addEventListener("click", () => {
-      this.askOracle("improbable");
-      this.close();
+    const defaultLikelihood = (_a = this.plugin.settings.defaultLikelihood) != null ? _a : "even";
+    const likelihoods = [
+      { key: "probable", label: strings.PROBABLE },
+      { key: "even", label: strings.EVEN },
+      { key: "improbable", label: strings.IMPROBABLE }
+    ];
+    likelihoods.forEach(({ key, label }) => {
+      const btn = buttonRow.createEl("button", {
+        text: label,
+        cls: `mod-cta ${key === defaultLikelihood ? "opse-default-likelihood" : ""}`
+      });
+      btn.addEventListener("click", () => {
+        this.askOracle(key);
+        this.close();
+      });
     });
   }
   async askOracle(likelihood) {
@@ -984,9 +1684,9 @@ var OracleModal = class extends import_obsidian5.Modal {
     const meta = t().METADATA;
     const roll = Random.roll2d6();
     const { answer, modifier } = OPSE.resolveYesNo(roll.d1, roll.d2, likelihood);
-    let title = `${strings.YESNO_TITLE}: ${this.question || "..."}`;
-    let content = `${answer}${modifier ? ` ${modifier}` : ""}`;
-    let raw = `(2d6=${roll.d1 + roll.d2}: d1=${roll.d1} [${meta.ANSWER}], d2=${roll.d2} [${meta.MOD}], ${meta.LIKELIHOOD}: ${likelihood})`;
+    const title = `${strings.YESNO_TITLE}: ${this.question || "..."}`;
+    const content = `${answer}${modifier ? ` ${modifier}` : ""}`;
+    const raw = `(2d6=${roll.d1 + roll.d2}: d1=${roll.d1} [${meta.ANSWER}], d2=${roll.d2} [${meta.MOD}], ${meta.LIKELIHOOD}: ${likelihood})`;
     await this.plugin.historyManager.addEntry({
       id: crypto.randomUUID(),
       answer: content,
@@ -1005,17 +1705,17 @@ var OracleModal = class extends import_obsidian5.Modal {
 };
 
 // src/commands/oracle.ts
+var import_obsidian6 = require("obsidian");
 var OracleCommands = class {
   static registerCommands(plugin) {
     const app = plugin.app;
     plugin.addCommand({
       id: "opse-ask-how-much",
-      name: `${t().ORACLE.HOW_MUCH}`,
+      name: `OPSE: ${t().ORACLE.CMD_HOW_MUCH}`,
       callback: async () => {
         const strings = t().ORACLE;
         const roll = Random.d(6);
         const content = strings.SCALES[roll - 1];
-        const meta = t().METADATA;
         const raw = `(1d6=${roll})`;
         await plugin.historyManager.addEntry({
           id: crypto.randomUUID(),
@@ -1030,11 +1730,10 @@ var OracleCommands = class {
     });
     plugin.addCommand({
       id: "opse-roll-beat-move",
-      name: "OPSE: Beat Move",
+      name: `OPSE: ${t().ORACLE.CMD_BEAT_MOVE}`,
       callback: async () => {
         const roll = Random.d(6);
         const content = OPSE.getBeatMove(roll - 1);
-        const meta = t().METADATA;
         const raw = `(1d6=${roll})`;
         await plugin.historyManager.addEntry({
           id: crypto.randomUUID(),
@@ -1043,17 +1742,16 @@ var OracleCommands = class {
           timestamp: Date.now(),
           type: "move"
         });
-        const markdown = MarkdownUtils.formatResult(t().ADVENTURE.HOOK, content, raw);
+        const markdown = MarkdownUtils.formatResult(t().ORACLE.CMD_BEAT_MOVE, content, raw);
         await MarkdownUtils.smartInsert(app, plugin, markdown);
       }
     });
     plugin.addCommand({
       id: "opse-roll-failure-move",
-      name: "OPSE: Failure Move",
+      name: `OPSE: ${t().ORACLE.CMD_FAILURE_MOVE}`,
       callback: async () => {
         const roll = Random.d(6);
         const content = OPSE.getFailureMove(roll - 1);
-        const meta = t().METADATA;
         const raw = `(1d6=${roll})`;
         await plugin.historyManager.addEntry({
           id: crypto.randomUUID(),
@@ -1062,19 +1760,18 @@ var OracleCommands = class {
           timestamp: Date.now(),
           type: "move"
         });
-        const markdown = MarkdownUtils.formatResult("Failure Move", content, raw);
+        const markdown = MarkdownUtils.formatResult(t().ORACLE.CMD_FAILURE_MOVE, content, raw);
         await MarkdownUtils.smartInsert(app, plugin, markdown);
       }
     });
     plugin.addCommand({
       id: "opse-focus-action",
-      name: "OPSE: Action Focus",
+      name: `OPSE: ${t().ORACLE.CMD_FOCUS_ACTION}`,
       callback: async () => {
         const focus = Random.drawFocus(plugin.settings.randomMode, plugin.deck);
         const content = OPSE.getAction(focus.rank);
         const domain = OPSE.getDomain(focus.suit);
-        const meta = t().METADATA;
-        const raw = `${plugin.settings.randomMode === "dice" ? `(${meta.DICE} Focus)` : `(${meta.DICE}: ${focus.rank} ${focus.suit})`}`;
+        const raw = plugin.settings.randomMode === "dice" ? "(dice focus)" : `(card: ${focus.rank} ${focus.suit})`;
         await plugin.historyManager.addEntry({
           id: crypto.randomUUID(),
           answer: content,
@@ -1083,23 +1780,22 @@ var OracleCommands = class {
           type: "focus",
           domain
         });
-        const markdown = MarkdownUtils.formatResult(t().ADVENTURE.NPC_FIELDS.GOAL, content, raw, domain);
+        const markdown = MarkdownUtils.formatResult(t().ORACLE.ACTION, content, raw, domain);
         await MarkdownUtils.smartInsert(app, plugin, markdown);
         if (focus.wasJoker) {
-          new Notice(t().COMMON.JOKER_NOTICE);
+          new import_obsidian6.Notice(t().COMMON.JOKER_NOTICE);
           plugin.app.commands.executeCommandById("opse-oracle:opse-random-event");
         }
       }
     });
     plugin.addCommand({
       id: "opse-focus-detail",
-      name: "OPSE: Detail Focus",
+      name: `OPSE: ${t().ORACLE.CMD_FOCUS_DETAIL}`,
       callback: async () => {
         const focus = Random.drawFocus(plugin.settings.randomMode, plugin.deck);
         const content = OPSE.getDetail(focus.rank);
         const domain = OPSE.getDomain(focus.suit);
-        const meta = t().METADATA;
-        const raw = `${plugin.settings.randomMode === "dice" ? `(${meta.DICE} Focus)` : `(${meta.DICE}: ${focus.rank} ${focus.suit})`}`;
+        const raw = plugin.settings.randomMode === "dice" ? "(dice focus)" : `(card: ${focus.rank} ${focus.suit})`;
         await plugin.historyManager.addEntry({
           id: crypto.randomUUID(),
           answer: content,
@@ -1108,17 +1804,41 @@ var OracleCommands = class {
           type: "focus",
           domain
         });
-        const markdown = MarkdownUtils.formatResult(t().ADVENTURE.HOOK, content, raw, domain);
+        const markdown = MarkdownUtils.formatResult(t().ORACLE.DETAIL, content, raw, domain);
         await MarkdownUtils.smartInsert(app, plugin, markdown);
         if (focus.wasJoker) {
-          new Notice(t().COMMON.JOKER_NOTICE);
+          new import_obsidian6.Notice(t().COMMON.JOKER_NOTICE);
+          plugin.app.commands.executeCommandById("opse-oracle:opse-random-event");
+        }
+      }
+    });
+    plugin.addCommand({
+      id: "opse-focus-theme",
+      name: `OPSE: ${t().ORACLE.CMD_FOCUS_THEME}`,
+      callback: async () => {
+        const focus = Random.drawFocus(plugin.settings.randomMode, plugin.deck);
+        const content = OPSE.getTheme(focus.rank);
+        const domain = OPSE.getDomain(focus.suit);
+        const raw = plugin.settings.randomMode === "dice" ? "(dice focus)" : `(card: ${focus.rank} ${focus.suit})`;
+        await plugin.historyManager.addEntry({
+          id: crypto.randomUUID(),
+          answer: content,
+          raw,
+          timestamp: Date.now(),
+          type: "focus",
+          domain
+        });
+        const markdown = MarkdownUtils.formatResult(t().ORACLE.THEME, content, raw, domain);
+        await MarkdownUtils.smartInsert(app, plugin, markdown);
+        if (focus.wasJoker) {
+          new import_obsidian6.Notice(t().COMMON.JOKER_NOTICE);
           plugin.app.commands.executeCommandById("opse-oracle:opse-random-event");
         }
       }
     });
     plugin.addCommand({
       id: "opse-focus-double",
-      name: "OPSE: Foco Doble (Acci\xF3n + Detalle)",
+      name: `OPSE: ${t().ORACLE.CMD_FOCUS_DOUBLE}`,
       callback: async () => {
         const focus1 = Random.drawFocus(plugin.settings.randomMode, plugin.deck);
         const focus2 = Random.drawFocus(plugin.settings.randomMode, plugin.deck);
@@ -1126,8 +1846,7 @@ var OracleCommands = class {
         const detail = OPSE.getDetail(focus2.rank);
         const domain = `${OPSE.getDomain(focus1.suit)} / ${OPSE.getDomain(focus2.suit)}`;
         const content = `${action} + ${detail}`;
-        const meta = t().METADATA;
-        const raw = `${plugin.settings.randomMode === "dice" ? `(${meta.DICE} Focus x2)` : `(${meta.DICE}: ${focus1.rank}${focus1.suit.charAt(0)}, ${focus2.rank}${focus2.suit.charAt(0)})`}`;
+        const raw = plugin.settings.randomMode === "dice" ? "(dice focus \xD72)" : `(cards: ${focus1.rank}${focus1.suit.charAt(0)}, ${focus2.rank}${focus2.suit.charAt(0)})`;
         await plugin.historyManager.addEntry({
           id: crypto.randomUUID(),
           answer: content,
@@ -1139,7 +1858,7 @@ var OracleCommands = class {
         const markdown = MarkdownUtils.formatResult(t().ADVENTURE.DOUBLE_FOCUS, content, raw, domain);
         await MarkdownUtils.smartInsert(app, plugin, markdown);
         if (focus1.wasJoker || focus2.wasJoker) {
-          new Notice(t().COMMON.JOKER_NOTICE);
+          new import_obsidian6.Notice(t().COMMON.JOKER_NOTICE);
           plugin.app.commands.executeCommandById("opse-oracle:opse-random-event");
         }
       }
@@ -1148,21 +1867,21 @@ var OracleCommands = class {
 };
 
 // src/commands/generators.ts
+var import_obsidian7 = require("obsidian");
 var GeneratorCommands = class {
   static registerCommands(plugin) {
     const app = plugin.app;
     plugin.addCommand({
       id: "opse-random-event",
-      name: "OPSE: Random Event",
+      name: `OPSE: ${t().ADVENTURE.GENERIC}`,
       callback: async () => {
         const focus1 = Random.drawFocus(plugin.settings.randomMode, plugin.deck);
         const focus2 = Random.drawFocus(plugin.settings.randomMode, plugin.deck);
         const action = OPSE.getAction(focus1.rank);
         const theme = OPSE.getTheme(focus2.rank);
         const domain = OPSE.getDomain(focus1.suit);
-        const meta = t().METADATA;
         const content = `${action} + ${theme}`;
-        const raw = `${plugin.settings.randomMode === "dice" ? `(2d6 Focus)` : `(Cards: ${focus1.rank} ${focus1.suit}, ${focus2.rank} ${focus2.suit})`}`;
+        const raw = plugin.settings.randomMode === "dice" ? "(2\xD7 foco dados)" : `(Cartas: ${focus1.rank}${focus1.suit.charAt(0)}, ${focus2.rank}${focus2.suit.charAt(0)})`;
         await plugin.historyManager.addEntry({
           id: crypto.randomUUID(),
           answer: content,
@@ -1174,14 +1893,14 @@ var GeneratorCommands = class {
         const markdown = MarkdownUtils.formatResult(t().ADVENTURE.GENERIC, content, raw, domain);
         await MarkdownUtils.smartInsert(app, plugin, markdown);
         if (focus1.wasJoker || focus2.wasJoker) {
-          new Notice(t().COMMON.JOKER_NOTICE);
+          new import_obsidian7.Notice(t().COMMON.JOKER_NOTICE);
           plugin.app.commands.executeCommandById("opse-oracle:opse-random-event");
         }
       }
     });
     plugin.addCommand({
       id: "opse-generate-hook",
-      name: "OPSE: Plot Hook",
+      name: `OPSE: ${t().ADVENTURE.HOOK}`,
       callback: async () => {
         const r1 = Random.d(6);
         const r2 = Random.d(6);
@@ -1195,8 +1914,7 @@ var GeneratorCommands = class {
         content += `**${strings.ADVERSARY_LABEL}:** ${adversary}
 `;
         content += `**${strings.REWARD_LABEL}:** ${reward}`;
-        const meta = t().METADATA;
-        const raw = `(3d6=${r1}, ${r2}, ${r3})`;
+        const raw = `(3d6: ${r1}, ${r2}, ${r3})`;
         await plugin.historyManager.addEntry({
           id: crypto.randomUUID(),
           answer: content,
@@ -1210,7 +1928,7 @@ var GeneratorCommands = class {
     });
     plugin.addCommand({
       id: "opse-generate-npc",
-      name: "OPSE: NPC Generator",
+      name: `OPSE: ${t().ADVENTURE.NPC}`,
       callback: async () => {
         const focusId = Random.drawFocus(plugin.settings.randomMode, plugin.deck);
         const focusGoal = Random.drawFocus(plugin.settings.randomMode, plugin.deck);
@@ -1218,11 +1936,12 @@ var GeneratorCommands = class {
         const focusDetail = Random.drawFocus(plugin.settings.randomMode, plugin.deck);
         const attitudeRoll = Random.d(6);
         const focusTopic = Random.drawFocus(plugin.settings.randomMode, plugin.deck);
-        const identity = OPSE.getAction(focusId.rank);
-        const goal = OPSE.getTheme(focusGoal.rank);
-        const trait = `${OPSE.getComplication(traitRoll - 1)} / ${OPSE.getDetail(focusDetail.rank)}`;
-        const attitudeResults = t().ORACLE.SCALES;
-        const attitude = attitudeResults[attitudeRoll - 1];
+        const identity = OPSE.getNPCIdentity(focusId.rank);
+        const goal = OPSE.getNPCObjective(focusGoal.rank);
+        const traitType = OPSE.getComplication(traitRoll - 1);
+        const traitDesc = OPSE.getDetail(focusDetail.rank);
+        const trait = traitRoll === 1 ? OPSE.getComplication(0) : `${traitType} / ${traitDesc}`;
+        const attitude = t().ORACLE.SCALES[attitudeRoll - 1];
         const topic = OPSE.getTheme(focusTopic.rank);
         const fields = t().ADVENTURE.NPC_FIELDS;
         let content = `**${fields.IDENTITY}:** ${identity}
@@ -1234,34 +1953,58 @@ var GeneratorCommands = class {
         content += `**${fields.ATTITUDE}:** ${attitude}
 `;
         content += `**${fields.TOPIC}:** ${topic}`;
+        const raw = `(${t().ADVENTURE.NPC} / ${plugin.settings.randomMode})`;
         await plugin.historyManager.addEntry({
           id: crypto.randomUUID(),
           answer: content,
-          raw: `(${t().ADVENTURE.NPC} / ${plugin.settings.randomMode})`,
+          raw,
           timestamp: Date.now(),
           type: "npc"
         });
-        const markdown = MarkdownUtils.formatResult(t().ADVENTURE.NPC, content, `(${t().METADATA.RESULT})`);
+        const markdown = MarkdownUtils.formatResult(t().ADVENTURE.NPC, content, raw);
         await MarkdownUtils.smartInsert(app, plugin, markdown);
         if (focusId.wasJoker || focusGoal.wasJoker || focusDetail.wasJoker || focusTopic.wasJoker) {
-          new Notice(t().COMMON.JOKER_NOTICE);
+          new import_obsidian7.Notice(t().COMMON.JOKER_NOTICE);
           plugin.app.commands.executeCommandById("opse-oracle:opse-random-event");
         }
       }
     });
     plugin.addCommand({
       id: "opse-generate-generic",
-      name: "OPSE: Generic Content",
+      name: `OPSE: ${t().ADVENTURE.GENERIC}`,
       callback: async () => {
         const focusAction = Random.drawFocus(plugin.settings.randomMode, plugin.deck);
         const focusDetail = Random.drawFocus(plugin.settings.randomMode, plugin.deck);
         const magnitudeRoll = Random.d(6);
         const action = OPSE.getAction(focusAction.rank);
         const appearance = OPSE.getDetail(focusDetail.rank);
+        const domain = `${OPSE.getDomain(focusAction.suit)} / ${OPSE.getDomain(focusDetail.suit)}`;
         const magnitude = t().ORACLE.SCALES[magnitudeRoll - 1];
         const content = `${action} / ${appearance} (${magnitude})`;
-        const meta = t().METADATA;
-        const raw = `(Act: ${focusAction.rank}, Det: ${focusDetail.rank}, Mag: ${magnitudeRoll})`;
+        const raw = `(Acc: ${focusAction.rank}, Det: ${focusDetail.rank}, Mag: ${magnitudeRoll})`;
+        await plugin.historyManager.addEntry({
+          id: crypto.randomUUID(),
+          answer: content,
+          raw,
+          timestamp: Date.now(),
+          type: "event",
+          domain
+        });
+        const markdown = MarkdownUtils.formatResult(t().ADVENTURE.GENERIC, content, raw, domain);
+        await MarkdownUtils.smartInsert(app, plugin, markdown);
+        if (focusAction.wasJoker || focusDetail.wasJoker) {
+          new import_obsidian7.Notice(t().COMMON.JOKER_NOTICE);
+          plugin.app.commands.executeCommandById("opse-oracle:opse-random-event");
+        }
+      }
+    });
+    plugin.addCommand({
+      id: "opse-plot-twist",
+      name: `OPSE: ${t().ADVENTURE.PLOT_TWIST}`,
+      callback: async () => {
+        const roll = Random.d(6);
+        const content = OPSE.getPlotTwist(roll - 1);
+        const raw = `(1d6=${roll})`;
         await plugin.historyManager.addEntry({
           id: crypto.randomUUID(),
           answer: content,
@@ -1269,50 +2012,28 @@ var GeneratorCommands = class {
           timestamp: Date.now(),
           type: "event"
         });
-        const markdown = MarkdownUtils.formatResult(t().ADVENTURE.GENERIC, content, raw);
-        await MarkdownUtils.smartInsert(app, plugin, markdown);
-        if (focusAction.wasJoker || focusDetail.wasJoker) {
-          new Notice(t().COMMON.JOKER_NOTICE);
-          plugin.app.commands.executeCommandById("opse-oracle:opse-random-event");
-        }
-      }
-    });
-    plugin.addCommand({
-      id: "opse-plot-twist",
-      name: "OPSE: Giro de Trama",
-      callback: async () => {
-        const roll = Random.d(6);
-        const content = OPSE.getPlotTwist(roll - 1);
-        const meta = t().METADATA;
-        await plugin.historyManager.addEntry({
-          id: crypto.randomUUID(),
-          answer: content,
-          raw: `(1d6=${roll})`,
-          timestamp: Date.now(),
-          type: "event"
-        });
-        const markdown = MarkdownUtils.formatResult(t().ADVENTURE.PLOT_TWIST, content, `(1d6=${roll})`);
+        const markdown = MarkdownUtils.formatResult(t().ADVENTURE.PLOT_TWIST, content, raw);
         await MarkdownUtils.smartInsert(app, plugin, markdown);
       }
     });
     plugin.addCommand({
       id: "opse-flavor",
-      name: "OPSE: Ambiente / Clima",
+      name: `OPSE: ${t().ADVENTURE.FLAVOR}`,
       callback: async () => {
         const rollAtm = Random.d(6);
         const rollWea = Random.d(6);
         const atmosphere = OPSE.getAtmosphere(rollAtm - 1);
         const weather = OPSE.getWeather(rollWea - 1);
         const content = `${atmosphere} / ${weather}`;
-        const meta = t().METADATA;
+        const raw = `(2d6: ${rollAtm}, ${rollWea})`;
         await plugin.historyManager.addEntry({
           id: crypto.randomUUID(),
           answer: content,
-          raw: `(2d6 Focus: ${rollAtm}, ${rollWea})`,
+          raw,
           timestamp: Date.now(),
           type: "event"
         });
-        const markdown = MarkdownUtils.formatResult(t().ADVENTURE.FLAVOR, content, `(2d6: ${rollAtm}, ${rollWea})`);
+        const markdown = MarkdownUtils.formatResult(t().ADVENTURE.FLAVOR, content, raw);
         await MarkdownUtils.smartInsert(app, plugin, markdown);
       }
     });
@@ -1320,30 +2041,38 @@ var GeneratorCommands = class {
 };
 
 // src/commands/exploration.ts
-var import_obsidian9 = require("obsidian");
+var import_obsidian11 = require("obsidian");
 
 // src/ui/modals/dungeon-modal.ts
-var import_obsidian6 = require("obsidian");
+var import_obsidian9 = require("obsidian");
 
 // src/core/dungeon.ts
 var DungeonManager = class {
+  static rollExits() {
+    const roll = Random.d(6);
+    if (roll <= 2) {
+      return 0;
+    }
+    if (roll <= 4) {
+      return 1;
+    }
+    return 2;
+  }
   static generateRoom(dungeon, name, fixedExits) {
     const id = crypto.randomUUID();
-    const locations = ["Pasillo", "Habitaci\xF3n", "C\xE1mara", "Escaleras", "Puente", "Almac\xE9n"];
-    const encounters = ["Ninguno", "Trampa", "Enemigo d\xE9bil", "Enemigo fuerte", "PNJ", "Peligro ambiental"];
-    const objects = ["Ninguno", "Tesoro", "Herramienta", "Nota/Pista", "Mueble", "Estatua"];
+    const locRoll = Random.d(6);
+    const encRoll = Random.d(6);
+    const objRoll = Random.d(6);
     const room = {
       id,
       name,
-      location: Random.pickOne(locations),
-      encounter: Random.pickOne(encounters),
-      object: Random.pickOne(objects),
-      exits: fixedExits !== void 0 ? fixedExits : Random.d(4) - 1,
+      location: OPSE.getDungeonLocation(locRoll - 1),
+      encounter: OPSE.getDungeonEncounter(encRoll - 1),
+      object: OPSE.getDungeonObject(objRoll - 1),
+      exits: fixedExits !== void 0 ? fixedExits : DungeonManager.rollExits(),
       connectedTo: [],
       notes: ""
     };
-    if (room.exits < 0)
-      room.exits = 0;
     dungeon.rooms[id] = room;
     dungeon.path.push(room.name || room.location);
     return room;
@@ -1364,14 +2093,25 @@ var DungeonManager = class {
   }
   static moveToNextRoom(dungeon, name) {
     const currentRoom = dungeon.currentRoomId ? dungeon.rooms[dungeon.currentRoomId] : null;
-    if (!currentRoom || currentRoom.exits <= 0)
+    if (!currentRoom || currentRoom.exits <= 0) {
       return null;
+    }
     currentRoom.exits--;
-    const nextRoom = this.generateRoom(dungeon, name || `Sala ${dungeon.path.length + 1}`);
+    const roomNumber = Object.keys(dungeon.rooms).length + 1;
+    const nextRoom = this.generateRoom(dungeon, name || `Sala ${roomNumber}`);
     currentRoom.connectedTo.push(nextRoom.id);
     nextRoom.connectedTo.push(currentRoom.id);
     dungeon.currentRoomId = nextRoom.id;
     return nextRoom;
+  }
+  static backtrackToRoom(dungeon, targetId) {
+    const target = dungeon.rooms[targetId];
+    if (!target) {
+      return null;
+    }
+    dungeon.currentRoomId = targetId;
+    dungeon.path.push(`\u21A9 ${target.name}`);
+    return target;
   }
   static addRoomNote(dungeon, roomId, note) {
     if (dungeon.rooms[roomId]) {
@@ -1380,77 +2120,55 @@ var DungeonManager = class {
   }
 };
 
-// src/ui/modals/dungeon-modal.ts
-var DungeonModal = class extends import_obsidian6.Modal {
-  constructor(app, plugin) {
-    super(app);
-    __publicField(this, "plugin");
-    __publicField(this, "name", "Mazmorra");
-    __publicField(this, "appearance", "...");
-    __publicField(this, "function", "...");
-    this.plugin = plugin;
-  }
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.createEl("h2", { text: "Dungeon Tracker" });
-    new import_obsidian6.Setting(contentEl).setName(t().ADVENTURE.TITLE).addText((text) => text.setValue(this.name).onChange((value) => this.name = value));
-    new import_obsidian6.Setting(contentEl).setName("Appearance / Theme").addText((text) => text.setValue(this.appearance).onChange((value) => this.appearance = value));
-    new import_obsidian6.Setting(contentEl).setName("Function / Purpose").addText((text) => text.setValue(this.function).onChange((value) => this.function = value));
-    new import_obsidian6.Setting(contentEl).addButton((btn) => btn.setButtonText(t().ADVENTURE.START).setCta().onClick(() => {
-      this.startDungeon();
-      this.close();
-    }));
-  }
-  startDungeon() {
-    const dungeon = DungeonManager.createDungeon(this.name, this.appearance, this.function);
-    const firstRoom = dungeon.rooms[dungeon.currentRoomId];
-    let title = `Dungeon: ${this.name}`;
-    let content = `**Theme:** ${this.appearance} (${this.function})
-
-`;
-    content += `**Entrance:** ${firstRoom.location}
-`;
-    content += `**Encounter:** ${firstRoom.encounter}
-`;
-    content += `**Object:** ${firstRoom.object}
-`;
-    content += `**Exits:** ${firstRoom.exits}`;
-    const markdown = MarkdownUtils.formatResult(title, content, "(Start of dungeon crawl)");
-    MarkdownUtils.insertAtCursor(this.app, markdown);
-  }
-  onClose() {
-    const { contentEl } = this;
-    contentEl.empty();
-  }
-};
-
-// src/ui/modals/hex-modal.ts
-var import_obsidian7 = require("obsidian");
+// src/ui/exploration-view.ts
+var import_obsidian8 = require("obsidian");
 
 // src/core/hex.ts
 var HexManager = class {
   static getHexKey(q, r) {
     return `${q},${r}`;
   }
+  static rollTerrain(region, currentTerrain) {
+    const roll = Random.d(6);
+    if (roll <= 2) {
+      return currentTerrain;
+    }
+    if (roll <= 4) {
+      return region.commonTerrain;
+    }
+    if (roll === 5) {
+      return region.uncommonTerrain;
+    }
+    return region.rareTerrain;
+  }
+  static rollContents() {
+    const roll = Random.d(6);
+    return OPSE.getHexContent(roll - 1);
+  }
+  static rollTrait() {
+    const roll = Random.d(6);
+    return OPSE.getHexTrait(roll - 1);
+  }
+  static rollEvent(threshold = 5) {
+    return Random.d(6) >= threshold;
+  }
   static generateHex(region, q, r) {
-    const roll = Random.d(12);
-    let terrain = region.commonTerrain;
-    if (roll === 10 || roll === 11)
-      terrain = region.uncommonTerrain;
-    if (roll === 12)
-      terrain = region.rareTerrain;
-    const contentsList = ["Ruinas", "Asentamiento", "Guarida", "Recurso", "Punto de inter\xE9s", "Nada notable"];
-    const traits = ["Encantado", "Peligroso", "Sagrado", "Bello", "En ruinas", "Oculto"];
+    var _a;
+    const currentKey = HexManager.getHexKey(region.currentHex.q, region.currentHex.r);
+    const currentHex = region.hexes[currentKey];
+    const currentTerrain = currentHex ? currentHex.terrain : region.commonTerrain;
+    const contentsRoll = HexManager.rollContents();
+    const hasTrait = contentsRoll === "RASGO" || contentsRoll === "TRAIT";
     const hex = {
       q,
       r,
-      terrain,
-      contents: Random.pickOne(contentsList),
-      trait: Random.pickOne(traits),
-      eventTriggered: Random.d(6) >= 5,
+      terrain: HexManager.rollTerrain(region, currentTerrain),
+      contents: hasTrait ? HexManager.rollTrait() : contentsRoll,
+      trait: hasTrait ? HexManager.rollTrait() : null,
+      eventTriggered: HexManager.rollEvent((_a = region.eventThreshold) != null ? _a : 5),
       notes: ""
     };
-    region.hexes[this.getHexKey(q, r)] = hex;
+    region.hexes[HexManager.getHexKey(q, r)] = hex;
     region.path.push(`${hex.terrain} (${q},${r})`);
     return hex;
   }
@@ -1465,7 +2183,17 @@ var HexManager = class {
       currentHex: { q: 0, r: 0 },
       path: []
     };
-    this.generateHex(region, 0, 0);
+    const startHex = {
+      q: 0,
+      r: 0,
+      terrain: common,
+      contents: "Punto de partida",
+      trait: null,
+      eventTriggered: false,
+      notes: ""
+    };
+    region.hexes[HexManager.getHexKey(0, 0)] = startHex;
+    region.path.push(`${common} (0,0)`);
     return region;
   }
   static moveToNeighbor(region, direction) {
@@ -1499,79 +2227,29 @@ var HexManager = class {
     }
     const nq = current.q + dq;
     const nr = current.r + dr;
-    const key = this.getHexKey(nq, nr);
+    const key = HexManager.getHexKey(nq, nr);
     let hex = region.hexes[key];
     if (!hex) {
-      hex = this.generateHex(region, nq, nr);
+      hex = HexManager.generateHex(region, nq, nr);
     }
     region.currentHex = { q: nq, r: nr };
     return hex;
   }
   static addHexNote(region, q, r, note) {
-    const key = this.getHexKey(q, r);
+    const key = HexManager.getHexKey(q, r);
     if (region.hexes[key]) {
       region.hexes[key].notes = note;
     }
   }
 };
 
-// src/ui/modals/hex-modal.ts
-var HexModal = class extends import_obsidian7.Modal {
-  constructor(app, plugin) {
-    super(app);
-    __publicField(this, "plugin");
-    __publicField(this, "name", "Regi\xF3n");
-    __publicField(this, "common", "...");
-    __publicField(this, "uncommon", "...");
-    __publicField(this, "rare", "...");
-    this.plugin = plugin;
-  }
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.createEl("h2", { text: "Hex Exploration" });
-    new import_obsidian7.Setting(contentEl).setName(t().ADVENTURE.TITLE).addText((text) => text.setValue(this.name).onChange((value) => this.name = value));
-    new import_obsidian7.Setting(contentEl).setName("Common Terrain").addText((text) => text.setValue(this.common).onChange((value) => this.common = value));
-    new import_obsidian7.Setting(contentEl).setName("Uncommon Terrain").addText((text) => text.setValue(this.uncommon).onChange((value) => this.uncommon = value));
-    new import_obsidian7.Setting(contentEl).setName("Rare Terrain").addText((text) => text.setValue(this.rare).onChange((value) => this.rare = value));
-    new import_obsidian7.Setting(contentEl).addButton((btn) => btn.setButtonText(t().ADVENTURE.START).setCta().onClick(() => {
-      this.startRegion();
-      this.close();
-    }));
-  }
-  startRegion() {
-    const region = HexManager.createRegion(this.name, this.common, this.uncommon, this.rare);
-    const startHex = region.hexes[HexManager.getHexKey(0, 0)];
-    let title = `Exploration: ${this.name}`;
-    let content = `**Terrain Schema:** ${this.common} / ${this.uncommon} / ${this.rare}
-
-`;
-    content += `**Starting Hex (0,0):**
-`;
-    content += `**Terrain:** ${startHex.terrain}
-`;
-    content += `**Contents:** ${startHex.contents}
-`;
-    content += `**Trait:** ${startHex.trait}
-`;
-    if (startHex.eventTriggered)
-      content += `**EVENT TRIGGERED!**
-`;
-    const markdown = MarkdownUtils.formatResult(title, content, "(Start of region exploration)");
-    MarkdownUtils.insertAtCursor(this.app, markdown);
-  }
-  onClose() {
-    const { contentEl } = this;
-    contentEl.empty();
-  }
-};
-
 // src/ui/exploration-view.ts
-var import_obsidian8 = require("obsidian");
 var VIEW_TYPE_OPSE_EXPLORATION = "opse-exploration-view";
 var ExplorationView = class extends import_obsidian8.ItemView {
   constructor(leaf, plugin) {
     super(leaf);
     __publicField(this, "plugin");
+    __publicField(this, "activeTab", "dungeon");
     this.plugin = plugin;
   }
   getViewType() {
@@ -1591,103 +2269,262 @@ var ExplorationView = class extends import_obsidian8.ItemView {
     container.empty();
     const activeAdventure = this.plugin.adventureManager.getActiveAdventure();
     if (!activeAdventure) {
-      container.createEl("p", { text: "No active adventure. Start one to enable exploration trackers.", cls: "opse-muted" });
+      container.createEl("p", { text: t().EXPLORATION.NO_EXPLORATION, cls: "opse-muted" });
       return;
     }
+    const hasDungeon = !!(activeAdventure.dungeonId && this.plugin.settings.dungeons[activeAdventure.dungeonId]);
+    const hasRegion = !!(activeAdventure.regionId && this.plugin.settings.regions[activeAdventure.regionId]);
+    if (!hasDungeon && !hasRegion) {
+      container.createEl("p", { text: t().EXPLORATION.NO_EXPLORATION, cls: "opse-muted" });
+      return;
+    }
+    if (!hasDungeon && hasRegion) {
+      this.activeTab = "hex";
+    }
+    if (hasDungeon && !hasRegion) {
+      this.activeTab = "dungeon";
+    }
+    const tabBar = container.createDiv({ cls: "opse-tab-bar" });
+    if (hasDungeon) {
+      const dungeonTab = tabBar.createEl("button", {
+        text: t().DASHBOARD.TAB_DUNGEON,
+        cls: `opse-tab ${this.activeTab === "dungeon" ? "is-active" : ""}`
+      });
+      dungeonTab.addEventListener("click", () => {
+        this.activeTab = "dungeon";
+        this.refresh();
+      });
+    }
+    if (hasRegion) {
+      const hexTab = tabBar.createEl("button", {
+        text: t().DASHBOARD.TAB_HEX,
+        cls: `opse-tab ${this.activeTab === "hex" ? "is-active" : ""}`
+      });
+      hexTab.addEventListener("click", () => {
+        this.activeTab = "hex";
+        this.refresh();
+      });
+    }
     const explorationRoot = container.createDiv({ cls: "opse-exploration-root" });
-    if (activeAdventure.dungeonId && this.plugin.settings.dungeons[activeAdventure.dungeonId]) {
+    if (this.activeTab === "dungeon" && hasDungeon) {
       this.renderDungeon(explorationRoot, this.plugin.settings.dungeons[activeAdventure.dungeonId]);
-    }
-    if (activeAdventure.regionId && this.plugin.settings.regions[activeAdventure.regionId]) {
+    } else if (this.activeTab === "hex" && hasRegion) {
       this.renderRegion(explorationRoot, this.plugin.settings.regions[activeAdventure.regionId]);
-    }
-    if (!activeAdventure.dungeonId && !activeAdventure.regionId) {
-      container.createEl("p", { text: "No active dungeon or region. Use the command palette to start exploring." });
     }
   }
   renderDungeon(parent, dungeon) {
+    const strings = t().EXPLORATION;
     const card = parent.createDiv({ cls: "opse-exploration-card" });
-    card.createEl("h3", { text: `Dungeon: ${dungeon.name}` });
+    card.createEl("h3", { text: `${strings.DUNGEON_TITLE}: ${dungeon.name}` });
     card.createEl("p", { text: `${dungeon.themeAppearance} / ${dungeon.themeFunction}`, cls: "opse-muted" });
     const currentRoom = dungeon.currentRoomId ? dungeon.rooms[dungeon.currentRoomId] : null;
-    if (currentRoom) {
-      const roomEl = card.createDiv({ cls: "opse-current-location" });
-      roomEl.createEl("h4", { text: `Sala: ${currentRoom.name}` });
-      roomEl.createEl("p", { text: `\u{1F4CD} ${currentRoom.location}` });
-      roomEl.createEl("p", { text: `\u{1F480} ${currentRoom.encounter}` });
-      roomEl.createEl("p", { text: `\u{1F48E} ${currentRoom.object}` });
-      roomEl.createEl("p", { text: `\u{1F6AA} Exits: ${currentRoom.exits}` });
-      const controls = card.createDiv({ cls: "opse-exploration-controls" });
-      if (currentRoom.connectedTo.length > 0) {
-        const backRow = controls.createDiv({ cls: "opse-navigation-row" });
-        backRow.createEl("span", { text: "Volver a: ", cls: "opse-label" });
-        currentRoom.connectedTo.forEach((targetId) => {
-          const targetRoom = dungeon.rooms[targetId];
-          if (targetRoom) {
-            const btn = backRow.createEl("button", { text: targetRoom.name, cls: "opse-nav-btn" });
-            btn.addEventListener("click", async () => {
-              dungeon.currentRoomId = targetId;
-              dungeon.path.push(`Retroceder: ${targetRoom.name}`);
-              await this.plugin.saveSettings();
-              this.refresh();
-            });
-          }
-        });
-      }
-      if (currentRoom.exits > 0) {
-        const exploreBtn = controls.createEl("button", { text: "Explorar nueva \xE1rea", cls: "opse-action-btn" });
-        exploreBtn.addEventListener("click", async () => {
-          DungeonManager.moveToNextRoom(dungeon);
-          await this.plugin.saveSettings();
-          this.refresh();
-        });
-      } else {
-        controls.createEl("p", { text: "No quedan salidas en esta sala.", cls: "opse-alert" });
-      }
-      const noteInput = card.createEl("textarea", { cls: "opse-interpretation-edit", attr: { placeholder: "A\xF1adir notas a la sala...", value: currentRoom.notes || "" } });
-      noteInput.addEventListener("change", async (e) => {
-        currentRoom.notes = e.target.value;
-        await this.plugin.saveSettings();
+    if (!currentRoom) {
+      return;
+    }
+    const roomEl = card.createDiv({ cls: "opse-current-location" });
+    roomEl.createEl("h4", { text: `${strings.CURRENT_ROOM}: ${currentRoom.name}` });
+    roomEl.createEl("p", { text: `\u{1F4CD} ${currentRoom.location}` });
+    roomEl.createEl("p", { text: `\u2694\uFE0F ${currentRoom.encounter}` });
+    roomEl.createEl("p", { text: `\u{1F48E} ${currentRoom.object}` });
+    roomEl.createEl("p", { text: `\u{1F6AA} ${currentRoom.exits}` });
+    const controls = card.createDiv({ cls: "opse-exploration-controls" });
+    if (currentRoom.connectedTo.length > 0) {
+      const backRow = controls.createDiv({ cls: "opse-navigation-row" });
+      backRow.createEl("span", { text: strings.BACKTRACK, cls: "opse-label" });
+      currentRoom.connectedTo.forEach((targetId) => {
+        const targetRoom = dungeon.rooms[targetId];
+        if (targetRoom) {
+          backRow.createEl("button", { text: targetRoom.name, cls: "opse-nav-btn" }).addEventListener("click", async () => {
+            dungeon.currentRoomId = targetId;
+            dungeon.path.push(`\u21A9 ${targetRoom.name}`);
+            await this.plugin.saveSettings();
+            this.refresh();
+          });
+        }
       });
     }
+    if (currentRoom.exits > 0) {
+      controls.createEl("button", { text: strings.EXPLORE_NEXT, cls: "opse-action-btn" }).addEventListener("click", async () => {
+        DungeonManager.moveToNextRoom(dungeon);
+        await this.plugin.saveSettings();
+        this.refresh();
+      });
+    } else {
+      controls.createEl("p", { text: strings.NO_EXITS, cls: "opse-alert" });
+    }
+    const noteInput = card.createEl("textarea", {
+      cls: "opse-interpretation-edit",
+      attr: { placeholder: strings.ADD_NOTES, value: currentRoom.notes || "" }
+    });
+    noteInput.addEventListener("change", async (e) => {
+      currentRoom.notes = e.target.value;
+      await this.plugin.saveSettings();
+    });
     this.renderPathMap(card, dungeon.path);
   }
   renderRegion(parent, region) {
+    const strings = t().EXPLORATION;
     const card = parent.createDiv({ cls: "opse-exploration-card" });
-    card.createEl("h3", { text: `Region: ${region.name}` });
+    card.createEl("h3", { text: `${strings.HEX_TITLE}: ${region.name}` });
     const currentHex = region.hexes[`${region.currentHex.q},${region.currentHex.r}`];
-    if (currentHex) {
-      const hexEl = card.createDiv({ cls: "opse-current-location" });
-      hexEl.createEl("h4", { text: `Hex: (${currentHex.q}, ${currentHex.r})` });
-      hexEl.createEl("p", { text: `\u{1F332} ${currentHex.terrain}` });
-      hexEl.createEl("p", { text: `\u{1F3DB}\uFE0F ${currentHex.contents}` });
-      hexEl.createEl("p", { text: `\u2728 ${currentHex.trait}` });
-      card.createEl("h5", { text: "Moverse:" });
-      const compass = card.createDiv({ cls: "opse-compass-grid" });
-      const directions = ["NW", "N", "NE", "SW", "S", "SE"];
-      directions.forEach((dir) => {
-        const btn = compass.createEl("button", { text: dir });
-        btn.addEventListener("click", async () => {
-          HexManager.moveToNeighbor(region, dir);
-          await this.plugin.saveSettings();
-          this.refresh();
-        });
-      });
-      const noteInput = card.createEl("textarea", { cls: "opse-interpretation-edit", attr: { placeholder: "A\xF1adir notas al hex\xE1gono...", value: currentHex.notes || "" } });
-      noteInput.addEventListener("change", async (e) => {
-        currentHex.notes = e.target.value;
-        await this.plugin.saveSettings();
-      });
+    if (!currentHex) {
+      return;
     }
+    const hexEl = card.createDiv({ cls: "opse-current-location" });
+    hexEl.createEl("h4", { text: `Hex: (${currentHex.q}, ${currentHex.r})` });
+    hexEl.createEl("p", { text: `\u{1F332} ${currentHex.terrain}` });
+    hexEl.createEl("p", { text: `\u{1F3DB}\uFE0F ${currentHex.contents}` });
+    if (currentHex.trait) {
+      hexEl.createEl("p", { text: `\u2728 ${currentHex.trait}` });
+    }
+    if (currentHex.eventTriggered) {
+      hexEl.createEl("p", { text: "\u26A1 Evento disparado", cls: "opse-alert" });
+    }
+    card.createEl("h5", { text: strings.MOVE });
+    const compass = card.createDiv({ cls: "opse-compass-grid" });
+    const directions = ["NW", "N", "NE", "SW", "S", "SE"];
+    directions.forEach((dir) => {
+      compass.createEl("button", { text: dir }).addEventListener("click", async () => {
+        HexManager.moveToNeighbor(region, dir);
+        await this.plugin.saveSettings();
+        this.refresh();
+      });
+    });
+    const noteInput = card.createEl("textarea", {
+      cls: "opse-interpretation-edit",
+      attr: { placeholder: strings.ADD_NOTES, value: currentHex.notes || "" }
+    });
+    noteInput.addEventListener("change", async (e) => {
+      currentHex.notes = e.target.value;
+      await this.plugin.saveSettings();
+    });
     this.renderPathMap(card, region.path);
   }
   renderPathMap(parent, path) {
-    if (path && path.length > 0) {
-      const mapEl = parent.createDiv({ cls: "opse-path-map" });
-      mapEl.createEl("h5", { text: "Mapa de Ruta:" });
-      const pathText = path.join(" \u2794 ");
-      mapEl.createDiv({ text: pathText, cls: "opse-path-text" });
+    if (!path || path.length === 0) {
+      return;
     }
+    const mapEl = parent.createDiv({ cls: "opse-path-map" });
+    mapEl.createEl("h5", { text: t().EXPLORATION.PATH_MAP });
+    mapEl.createDiv({ text: path.join(" \u2794 "), cls: "opse-path-text" });
+  }
+};
+
+// src/ui/modals/dungeon-modal.ts
+var DungeonModal = class extends import_obsidian9.Modal {
+  constructor(app, plugin) {
+    super(app);
+    __publicField(this, "plugin");
+    __publicField(this, "name", "Mazmorra");
+    __publicField(this, "appearance", "");
+    __publicField(this, "func", "");
+    this.plugin = plugin;
+  }
+  onOpen() {
+    const { contentEl } = this;
+    const strings = t().EXPLORATION;
+    contentEl.createEl("h2", { text: strings.DUNGEON_TITLE });
+    new import_obsidian9.Setting(contentEl).setName(t().ADVENTURE.TITLE).addText((text) => text.setPlaceholder("Nombre de la mazmorra").setValue(this.name).onChange((value) => this.name = value));
+    new import_obsidian9.Setting(contentEl).setName(strings.APPEARANCE).addText((text) => text.setPlaceholder("Ej: H\xFAmeda, oscura, piedra antigua").setValue(this.appearance).onChange((value) => this.appearance = value));
+    new import_obsidian9.Setting(contentEl).setName(strings.FUNCTION).addText((text) => text.setPlaceholder("Ej: Tumba, cuartel, templo").setValue(this.func).onChange((value) => this.func = value));
+    new import_obsidian9.Setting(contentEl).addButton((btn) => btn.setButtonText(t().ADVENTURE.START).setCta().onClick(() => {
+      this.startDungeon();
+      this.close();
+    }));
+  }
+  async startDungeon() {
+    const dungeon = DungeonManager.createDungeon(this.name, this.appearance || "Sin descripci\xF3n", this.func || "Sin descripci\xF3n");
+    const firstRoom = dungeon.rooms[dungeon.currentRoomId];
+    this.plugin.settings.dungeons[dungeon.id] = dungeon;
+    const active = this.plugin.adventureManager.getActiveAdventure();
+    if (active) {
+      active.dungeonId = dungeon.id;
+      await this.plugin.adventureManager.linkDungeon(active.activeNotePath, dungeon.id);
+    }
+    await this.plugin.saveSettings();
+    new import_obsidian9.Notice(t().COMMON.DUNGEON_CREATED);
+    let content = `**Tema:** ${dungeon.themeAppearance} (${dungeon.themeFunction})
+
+`;
+    content += `**Entrada:** ${firstRoom.location}
+`;
+    content += `**Encuentro:** ${firstRoom.encounter}
+`;
+    content += `**Objeto:** ${firstRoom.object}
+`;
+    content += `**Salidas:** ${firstRoom.exits}`;
+    const markdown = MarkdownUtils.formatResult(`Dungeon: ${this.name}`, content, "(Inicio de la mazmorra)");
+    await MarkdownUtils.smartInsert(this.app, this.plugin, markdown);
+    if (this.plugin.settings.autoOpenExploration) {
+      await this.plugin.activateView(VIEW_TYPE_OPSE_EXPLORATION);
+    }
+    this.plugin.refreshViews();
+  }
+  onClose() {
+    this.contentEl.empty();
+  }
+};
+
+// src/ui/modals/hex-modal.ts
+var import_obsidian10 = require("obsidian");
+var HexModal = class extends import_obsidian10.Modal {
+  constructor(app, plugin) {
+    super(app);
+    __publicField(this, "plugin");
+    __publicField(this, "name", "Regi\xF3n");
+    __publicField(this, "common", "");
+    __publicField(this, "uncommon", "");
+    __publicField(this, "rare", "");
+    this.plugin = plugin;
+  }
+  onOpen() {
+    const { contentEl } = this;
+    const strings = t().EXPLORATION;
+    contentEl.createEl("h2", { text: strings.HEX_TITLE });
+    new import_obsidian10.Setting(contentEl).setName(t().ADVENTURE.TITLE).addText((text) => text.setPlaceholder("Nombre de la regi\xF3n").setValue(this.name).onChange((value) => this.name = value));
+    new import_obsidian10.Setting(contentEl).setName(strings.COMMON_TERRAIN).addText((text) => text.setPlaceholder("Ej: Bosque").setValue(this.common).onChange((value) => this.common = value));
+    new import_obsidian10.Setting(contentEl).setName(strings.UNCOMMON_TERRAIN).addText((text) => text.setPlaceholder("Ej: Pantano").setValue(this.uncommon).onChange((value) => this.uncommon = value));
+    new import_obsidian10.Setting(contentEl).setName(strings.RARE_TERRAIN).addText((text) => text.setPlaceholder("Ej: Monta\xF1a").setValue(this.rare).onChange((value) => this.rare = value));
+    new import_obsidian10.Setting(contentEl).addButton((btn) => btn.setButtonText(t().ADVENTURE.START).setCta().onClick(() => {
+      this.startRegion();
+      this.close();
+    }));
+  }
+  async startRegion() {
+    var _a;
+    const common = this.common || "Terreno com\xFAn";
+    const uncommon = this.uncommon || "Terreno poco com\xFAn";
+    const rare = this.rare || "Terreno raro";
+    const region = HexManager.createRegion(this.name, common, uncommon, rare);
+    region.eventThreshold = (_a = this.plugin.settings.hexEventThreshold) != null ? _a : 5;
+    const startHex = region.hexes[HexManager.getHexKey(0, 0)];
+    this.plugin.settings.regions[region.id] = region;
+    const active = this.plugin.adventureManager.getActiveAdventure();
+    if (active) {
+      active.regionId = region.id;
+      await this.plugin.adventureManager.linkRegion(active.activeNotePath, region.id);
+    }
+    await this.plugin.saveSettings();
+    new import_obsidian10.Notice(t().COMMON.REGION_CREATED);
+    let content = `**Terrenos:** ${common} / ${uncommon} / ${rare}
+
+`;
+    content += "**Hex inicial (0,0):**\n";
+    content += `**Terreno:** ${startHex.terrain}
+`;
+    content += `**Contenido:** ${startHex.contents}`;
+    if (startHex.eventTriggered) {
+      content += "\n**\xA1EVENTO DISPARADO!**";
+    }
+    const markdown = MarkdownUtils.formatResult(`Exploraci\xF3n: ${this.name}`, content, "(Inicio de la exploraci\xF3n)");
+    await MarkdownUtils.smartInsert(this.app, this.plugin, markdown);
+    if (this.plugin.settings.autoOpenExploration) {
+      await this.plugin.activateView(VIEW_TYPE_OPSE_EXPLORATION);
+    }
+    this.plugin.refreshViews();
+  }
+  onClose() {
+    this.contentEl.empty();
   }
 };
 
@@ -1696,110 +2533,101 @@ var ExplorationCommands = class {
   static registerCommands(plugin) {
     plugin.addCommand({
       id: "opse-create-dungeon",
-      name: "Crear rastreador de mazmorra",
-      callback: () => {
-        new DungeonModal(plugin.app, plugin).open();
-      }
+      name: "OPSE: Crear rastreador de mazmorra",
+      callback: () => new DungeonModal(plugin.app, plugin).open()
     });
     plugin.addCommand({
       id: "opse-create-hex-region",
-      name: "Crear regi\xF3n de hex\xE1gonos",
-      callback: () => {
-        new HexModal(plugin.app, plugin).open();
-      }
+      name: "OPSE: Crear regi\xF3n de hex\xE1gonos",
+      callback: () => new HexModal(plugin.app, plugin).open()
     });
     plugin.addCommand({
       id: "opse-explore-room",
-      name: "Explorar siguiente \xE1rea de la mazmorra",
+      name: "OPSE: Explorar siguiente sala de la mazmorra",
       callback: async () => {
         const active = plugin.adventureManager.getActiveAdventure();
-        if (active && active.dungeonId) {
-          const dungeon = plugin.settings.dungeons[active.dungeonId];
-          if (dungeon) {
-            const next = DungeonManager.moveToNextRoom(dungeon);
-            if (next) {
-              await plugin.saveSettings();
-              new import_obsidian9.Notice(`Nueva sala explorada: ${next.name}`);
-              const leaf = plugin.app.workspace.getLeavesOfType(VIEW_TYPE_OPSE_EXPLORATION)[0];
-              if (leaf)
-                leaf.view.refresh();
-            } else {
-              new import_obsidian9.Notice("No hay m\xE1s salidas disponibles en esta sala.");
-            }
-          }
+        if (!(active == null ? void 0 : active.dungeonId)) {
+          new import_obsidian11.Notice(t().EXPLORATION.NO_DUNGEON);
+          return;
+        }
+        const dungeon = plugin.settings.dungeons[active.dungeonId];
+        if (!dungeon) {
+          new import_obsidian11.Notice(t().EXPLORATION.NO_DUNGEON);
+          return;
+        }
+        const next = DungeonManager.moveToNextRoom(dungeon);
+        if (next) {
+          await plugin.saveSettings();
+          new import_obsidian11.Notice(`Sala explorada: ${next.name} \u2014 ${next.location}`);
+          plugin.refreshViews();
         } else {
-          new import_obsidian9.Notice("No hay ninguna mazmorra activa.");
+          new import_obsidian11.Notice(t().EXPLORATION.NO_EXITS);
         }
       }
     });
-    plugin.addCommand({
-      id: "opse-explore-hex",
-      name: "Moverse al Norte (Regi\xF3n Hex)",
-      callback: async () => {
-        const active = plugin.adventureManager.getActiveAdventure();
-        if (active && active.regionId) {
+    const hexDirections = [
+      { id: "opse-hex-north", dir: "N", label: "Norte" },
+      { id: "opse-hex-northeast", dir: "NE", label: "Noreste" },
+      { id: "opse-hex-southeast", dir: "SE", label: "Sureste" },
+      { id: "opse-hex-south", dir: "S", label: "Sur" },
+      { id: "opse-hex-southwest", dir: "SW", label: "Suroeste" },
+      { id: "opse-hex-northwest", dir: "NW", label: "Noroeste" }
+    ];
+    for (const { id, dir, label } of hexDirections) {
+      plugin.addCommand({
+        id,
+        name: `OPSE: Moverse al ${label} (Hex)`,
+        callback: async () => {
+          const active = plugin.adventureManager.getActiveAdventure();
+          if (!(active == null ? void 0 : active.regionId)) {
+            new import_obsidian11.Notice(t().EXPLORATION.NO_REGION);
+            return;
+          }
           const region = plugin.settings.regions[active.regionId];
-          if (region) {
-            HexManager.moveToNeighbor(region, "N");
-            await plugin.saveSettings();
-            new import_obsidian9.Notice(`Desplazado al Norte.`);
-            const leaf = plugin.app.workspace.getLeavesOfType(VIEW_TYPE_OPSE_EXPLORATION)[0];
-            if (leaf)
-              leaf.view.refresh();
+          if (!region) {
+            new import_obsidian11.Notice(t().EXPLORATION.NO_REGION);
+            return;
           }
-        } else {
-          new import_obsidian9.Notice("No hay ninguna regi\xF3n de hex\xE1gonos activa.");
+          HexManager.moveToNeighbor(region, dir);
+          await plugin.saveSettings();
+          new import_obsidian11.Notice(`Movido al ${label}.`);
+          plugin.refreshViews();
+          await plugin.activateView(VIEW_TYPE_OPSE_EXPLORATION);
         }
-      }
-    });
+      });
+    }
   }
 };
 
 // src/ui/control-view.ts
-var import_obsidian11 = require("obsidian");
+var import_obsidian13 = require("obsidian");
 
 // src/utils/exporter.ts
-var import_obsidian10 = require("obsidian");
+var import_obsidian12 = require("obsidian");
 var ExportUtils = class {
   static async exportSession(app, plugin) {
+    var _a;
     try {
       const history = plugin.historyManager.getHistory();
-      if (history.length === 0)
+      if (history.length === 0) {
         return false;
+      }
+      const format = (_a = plugin.settings.exportFormat) != null ? _a : "markdown";
       const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-      const fileName = `OPSE-Session-${timestamp}.md`;
-      let content = `# OPSE Session Report
-`;
-      content += `Exported on: ${new Date().toLocaleString()}
-
-`;
-      const meta = t().METADATA;
-      history.forEach((entry) => {
-        content += `### ${new Date(entry.timestamp).toLocaleTimeString()} - ${entry.type.toUpperCase()}
-`;
-        if (entry.question)
-          content += `**${meta.RESULT}:** ${entry.question}
-`;
-        content += `**${meta.ANSWER}:** ${entry.answer}
-`;
-        if (entry.domain)
-          content += `*${meta.DOMAIN}:* ${entry.domain}
-`;
-        if (entry.interpretation)
-          content += `*${meta.NOTE}:* ${entry.interpretation}
-`;
-        content += `*${meta.RAW}:* ${entry.raw}
-
----
-
-`;
-      });
+      const ext = format === "json" ? "json" : "md";
+      const fileName = `OPSE-Session-${timestamp}.${ext}`;
+      let content;
+      if (format === "json") {
+        content = ExportUtils.buildJson(plugin);
+      } else {
+        content = ExportUtils.buildMarkdown(history);
+      }
       let folderPath = "/";
       const activeFile = app.workspace.getActiveFile();
       if (activeFile && activeFile.parent) {
         folderPath = activeFile.parent.path;
       }
-      const fullPath = (0, import_obsidian10.normalizePath)(`${folderPath}/${fileName}`);
+      const fullPath = (0, import_obsidian12.normalizePath)(`${folderPath}/${fileName}`);
       await app.vault.create(fullPath, content);
       return true;
     } catch (e) {
@@ -1807,15 +2635,80 @@ var ExportUtils = class {
       return false;
     }
   }
+  static buildMarkdown(history) {
+    const meta = t().METADATA;
+    let content = "# OPSE Session Report\n";
+    content += `Exported on: ${new Date().toLocaleString()}
+
+`;
+    history.forEach((entry) => {
+      content += `### ${new Date(entry.timestamp).toLocaleTimeString()} \u2014 ${entry.type.toUpperCase()}
+`;
+      if (entry.question) {
+        content += `**${meta.RESULT}:** ${entry.question}
+`;
+      }
+      content += `**${meta.ANSWER}:** ${entry.answer}
+`;
+      if (entry.domain) {
+        content += `*${meta.DOMAIN}:* ${entry.domain}
+`;
+      }
+      if (entry.interpretation) {
+        content += `*${meta.NOTE}:* ${entry.interpretation}
+`;
+      }
+      content += `*${meta.RAW}:* ${entry.raw}
+
+---
+
+`;
+    });
+    return content;
+  }
+  static buildJson(plugin) {
+    const active = plugin.adventureManager.getActiveAdventure();
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      adventure: active ? {
+        title: active.title,
+        system: active.system,
+        genre: active.genre,
+        sceneRank: active.sceneRank,
+        threads: active.threads
+      } : null,
+      history: plugin.historyManager.getHistory().map((e) => {
+        var _a, _b, _c, _d, _e;
+        return {
+          type: e.type,
+          timestamp: new Date(e.timestamp).toISOString(),
+          question: (_a = e.question) != null ? _a : null,
+          answer: e.answer,
+          modifier: (_b = e.modifier) != null ? _b : null,
+          domain: (_c = e.domain) != null ? _c : null,
+          raw: e.raw,
+          interpretation: (_d = e.interpretation) != null ? _d : null,
+          pinned: (_e = e.pinned) != null ? _e : false
+        };
+      })
+    };
+    return JSON.stringify(payload, null, 2);
+  }
 };
 
 // src/ui/control-view.ts
 var VIEW_TYPE_OPSE_CONTROL = "opse-control-view";
-var ControlPanelView = class extends import_obsidian11.ItemView {
+var MIN_TAB_HEIGHT = 80;
+var MIN_HISTORY_HEIGHT = 80;
+var ControlPanelView = class extends import_obsidian13.ItemView {
   constructor(leaf, plugin) {
+    var _a;
     super(leaf);
     __publicField(this, "plugin");
+    __publicField(this, "activeTab", "oracle");
+    __publicField(this, "activeFilter", "all");
     this.plugin = plugin;
+    this.activeTab = (_a = plugin.settings.defaultTab) != null ? _a : "oracle";
   }
   getViewType() {
     return VIEW_TYPE_OPSE_CONTROL;
@@ -1833,127 +2726,216 @@ var ControlPanelView = class extends import_obsidian11.ItemView {
     var _a, _b;
     const container = this.containerEl.children[1];
     container.empty();
-    const mainRoot = container.createDiv({ cls: "opse-unified-root" });
+    const root = container.createDiv({ cls: "opse-unified-root" });
     const activeAdventure = this.plugin.adventureManager.getActiveAdventure();
-    const scrollRoot = mainRoot.createDiv({ cls: "opse-control-root" });
     if (activeAdventure) {
-      const adventureDetails = scrollRoot.createEl("details", { cls: "opse-adventure-card" });
-      adventureDetails.createEl("summary", { text: activeAdventure.title });
-      const content = adventureDetails.createDiv({ cls: "opse-section-content" });
-      const rankRow = content.createDiv({ cls: "opse-rank-row" });
+      const adventureCard = root.createEl("details", { cls: "opse-adventure-card" });
+      adventureCard.createEl("summary", { text: activeAdventure.title });
+      const cardContent = adventureCard.createDiv({ cls: "opse-section-content" });
+      const rankRow = cardContent.createDiv({ cls: "opse-rank-row" });
       rankRow.createSpan({ text: `${t().DASHBOARD.RANK}: `, cls: "opse-label" });
       rankRow.createSpan({ text: ((_a = activeAdventure.sceneRank) != null ? _a : 1).toString(), cls: "opse-rank-value" });
       const rankControls = rankRow.createDiv({ cls: "opse-rank-controls" });
-      const rankMinus = rankControls.createEl("button", { text: "-", cls: "opse-rank-btn" });
-      rankMinus.addEventListener("click", async () => {
+      rankControls.createEl("button", { text: "-", cls: "opse-rank-btn" }).addEventListener("click", async () => {
         var _a2;
         await this.plugin.adventureManager.setSceneRank(activeAdventure.activeNotePath, ((_a2 = activeAdventure.sceneRank) != null ? _a2 : 1) - 1);
         this.refresh();
       });
-      const rankPlus = rankControls.createEl("button", { text: "+", cls: "opse-rank-btn" });
-      rankPlus.addEventListener("click", async () => {
+      rankControls.createEl("button", { text: "+", cls: "opse-rank-btn" }).addEventListener("click", async () => {
         var _a2;
         await this.plugin.adventureManager.setSceneRank(activeAdventure.activeNotePath, ((_a2 = activeAdventure.sceneRank) != null ? _a2 : 1) + 1);
         this.refresh();
       });
-      const threadSection = content.createDiv({ cls: "opse-thread-section" });
+      const threadSection = cardContent.createDiv({ cls: "opse-thread-section" });
       threadSection.createEl("h5", { text: t().DASHBOARD.THREADS });
       const threadList = threadSection.createDiv({ cls: "opse-thread-list" });
       ((_b = activeAdventure.threads) != null ? _b : []).forEach((thread, index) => {
         const item = threadList.createDiv({ cls: "opse-thread-item" });
         item.createSpan({ text: thread });
-        const delBtn = item.createEl("button", { text: "\xD7", cls: "opse-del-btn" });
-        delBtn.addEventListener("click", async () => {
+        item.createEl("button", { text: "\xD7", cls: "opse-del-btn" }).addEventListener("click", async () => {
           await this.plugin.adventureManager.removeThread(activeAdventure.activeNotePath, index);
           this.refresh();
         });
       });
-      const addThreadRow = threadSection.createDiv({ cls: "opse-add-thread" });
-      const threadInput = addThreadRow.createEl("input", { attr: { placeholder: t().DASHBOARD.NEW_THREAD } });
-      const addBtn = addThreadRow.createEl("button", { text: "+" });
-      addBtn.addEventListener("click", async () => {
+      const addRow = threadSection.createDiv({ cls: "opse-add-thread" });
+      const threadInput = addRow.createEl("input", { attr: { placeholder: t().DASHBOARD.NEW_THREAD } });
+      addRow.createEl("button", { text: "+" }).addEventListener("click", async () => {
         if (threadInput.value) {
           await this.plugin.adventureManager.addThread(activeAdventure.activeNotePath, threadInput.value);
           this.refresh();
         }
       });
     }
-    this.createCollapsibleSection(scrollRoot, t().ADVENTURE.NEW, [
-      { text: t().ADVENTURE.NEW, callback: () => new AdventureModal(this.app, this.plugin).open() }
-    ], false);
-    this.createCollapsibleSection(scrollRoot, t().SCENE.NEW, [
-      { text: t().SCENE.GENERATE, callback: () => new SceneModal(this.app, this.plugin).open() },
-      { text: t().SCENE.CHECK_ALTERATION, callback: () => this.handleCheckAlteration() },
-      { text: t().SCENE.ALTERED_ONLY, callback: () => this.handleAlteredRoll() },
-      { text: t().SCENE.COMPLICATION_BTN, callback: () => this.handleComplicationRoll() }
-    ], true);
-    this.createCollapsibleSection(scrollRoot, t().ORACLE.TITLE, [
-      { text: t().ORACLE.ASK, callback: () => new OracleModal(this.app, this.plugin).open() },
-      { text: t().ORACLE.HOW_MUCH, callback: () => this.app.commands.executeCommandById("opse-oracle:opse-ask-how-much") }
-    ], true);
-    this.createCollapsibleSection(scrollRoot, t().ORACLE.FOCUS_TITLE, [
-      { text: t().ORACLE.ACTION, callback: () => this.app.commands.executeCommandById("opse-oracle:opse-focus-action") },
-      { text: t().ORACLE.DETAIL, callback: () => this.app.commands.executeCommandById("opse-oracle:opse-focus-detail") },
-      { text: t().ADVENTURE.DOUBLE_FOCUS, callback: () => this.app.commands.executeCommandById("opse-oracle:opse-focus-double") }
-    ], true);
-    this.createCollapsibleSection(scrollRoot, t().DASHBOARD.GENERATORS, [
-      { text: t().ADVENTURE.NPC, callback: () => this.app.commands.executeCommandById("opse-oracle:opse-generate-npc") },
-      { text: t().ADVENTURE.PLOT_TWIST, callback: () => this.app.commands.executeCommandById("opse-oracle:opse-plot-twist") },
-      { text: t().ADVENTURE.HOOK, callback: () => this.app.commands.executeCommandById("opse-oracle:opse-generate-hook") },
-      { text: t().ADVENTURE.GENERIC, callback: () => this.app.commands.executeCommandById("opse-oracle:opse-generate-generic") }
-    ], true);
-    this.createCollapsibleSection(scrollRoot, t().DASHBOARD.SESSION, [
-      {
-        text: t().DASHBOARD.EXPORTAR,
-        callback: async () => {
-          const success = await ExportUtils.exportSession(this.app, this.plugin);
-          if (success)
-            new import_obsidian11.Notice(t().EXPORT.SUCCESS);
-          else
-            new import_obsidian11.Notice(t().EXPORT.ERROR);
-        }
-      },
-      {
-        text: t().DASHBOARD.BARAJAR,
-        callback: () => {
-          this.plugin.deck.shuffle();
-          new import_obsidian11.Notice(t().DASHBOARD.SHUFFLE_SUCCESS);
-        }
-      }
-    ], false);
-    const helpDetails = scrollRoot.createEl("details", { cls: "opse-control-section opse-help-details" });
-    helpDetails.createEl("summary", { text: t().HELP.TITLE });
-    const helpContent = helpDetails.createDiv({ cls: "opse-section-content opse-help-content" });
-    helpContent.createEl("p", { text: t().HELP.SCENE_STEREOTYPE });
-    helpContent.createEl("p", { text: t().HELP.SCENE_ALTERED });
-    helpContent.createEl("p", { text: t().HELP.EVENT_TRIGGER });
-    helpContent.createEl("p", { text: t().HELP.GM_MOVES });
-    const historyWrapper = mainRoot.createDiv({ cls: "opse-history-wrapper" });
-    historyWrapper.createEl("h4", { text: t().DASHBOARD.HISTORY });
-    const historyRoot = historyWrapper.createDiv({ cls: "opse-history-root" });
-    const entries = this.plugin.historyManager.getHistory();
+    const tabDefs = [
+      { id: "scene", label: t().DASHBOARD.TAB_SCENE },
+      { id: "oracle", label: t().DASHBOARD.TAB_ORACLE },
+      { id: "generators", label: t().DASHBOARD.TAB_GENERATORS },
+      { id: "explore", label: t().DASHBOARD.TAB_EXPLORE },
+      { id: "session", label: t().DASHBOARD.TAB_SESSION }
+    ];
+    const tabBar = root.createDiv({ cls: "opse-tab-bar opse-dashboard-tabs" });
+    tabDefs.forEach(({ id, label }) => {
+      tabBar.createEl("button", {
+        text: label,
+        cls: `opse-tab ${this.activeTab === id ? "is-active" : ""}`
+      }).addEventListener("click", () => {
+        this.activeTab = id;
+        this.refresh();
+      });
+    });
+    const tabContentHeight = this.plugin.settings.tabContentHeight;
+    const tabContent = root.createDiv({ cls: "opse-tab-content" });
+    tabContent.style.height = `${tabContentHeight}px`;
+    switch (this.activeTab) {
+      case "scene":
+        this.renderSceneTab(tabContent);
+        break;
+      case "oracle":
+        this.renderOracleTab(tabContent);
+        break;
+      case "generators":
+        this.renderGeneratorsTab(tabContent);
+        break;
+      case "explore":
+        this.renderExploreTab(tabContent);
+        break;
+      case "session":
+        this.renderSessionTab(tabContent);
+        break;
+    }
+    const resizeHandle = root.createDiv({ cls: "opse-resize-handle" });
+    resizeHandle.title = "Drag to resize";
+    this.attachResizeHandler(resizeHandle, tabContent);
+    const historyWrapper = root.createDiv({ cls: "opse-history-wrapper" });
+    const historyHeader = historyWrapper.createDiv({ cls: "opse-history-header-row" });
+    historyHeader.createEl("h4", { text: t().DASHBOARD.HISTORY });
+    const filterBar = historyWrapper.createDiv({ cls: "opse-filter-bar" });
+    filterBar.createSpan({ text: t().DASHBOARD.FILTER_LABEL, cls: "opse-label" });
+    const filterTypes = [
+      { key: "all", label: t().DASHBOARD.FILTER_ALL },
+      { key: "yesno", label: "S/N" },
+      { key: "howmuch", label: "?" },
+      { key: "focus", label: "Foco" },
+      { key: "event", label: "Evento" },
+      { key: "scene", label: "Escena" },
+      { key: "move", label: "Mov." },
+      { key: "npc", label: "PNJ" },
+      { key: "hook", label: "Gancho" }
+    ];
+    filterTypes.forEach(({ key, label }) => {
+      filterBar.createEl("button", {
+        text: label,
+        cls: `opse-filter-btn ${this.activeFilter === key ? "is-active" : ""}`
+      }).addEventListener("click", () => {
+        this.activeFilter = key;
+        this.refresh();
+      });
+    });
+    const compact = this.plugin.settings.compactHistory;
+    const historyRoot = historyWrapper.createDiv({ cls: `opse-history-root${compact ? " is-compact" : ""}` });
+    let allEntries = this.plugin.historyManager.getHistory();
+    if (this.plugin.settings.historyOrder === "oldest") {
+      allEntries = [...allEntries].reverse();
+    }
+    const entries = this.activeFilter === "all" ? allEntries : allEntries.filter((e) => e.type === this.activeFilter);
     if (entries.length === 0) {
       historyRoot.createEl("p", { text: t().DASHBOARD.NO_HISTORY, cls: "opse-muted" });
     } else {
       entries.forEach((entry) => this.renderEntry(historyRoot, entry));
     }
   }
-  createCollapsibleSection(parent, title, actions, open = false) {
-    const details = parent.createEl("details", { cls: "opse-control-section" });
-    if (open)
-      details.setAttribute("open", "");
-    details.createEl("summary", { text: title });
-    const content = details.createDiv({ cls: "opse-section-content" });
-    const grid = content.createDiv({ cls: "opse-control-grid" });
-    actions.forEach((action) => {
-      const btn = grid.createEl("button", { text: action.text });
-      btn.addEventListener("click", action.callback);
+  renderSceneTab(parent) {
+    this.renderButtonGroup(parent, t().SCENE.NEW, [
+      { text: t().SCENE.GENERATE, callback: () => new SceneModal(this.app, this.plugin).open() },
+      { text: t().SCENE.CHECK_ALTERATION, callback: () => this.handleCheckAlteration() },
+      { text: t().SCENE.ALTERED_ONLY, callback: () => this.handleAlteredRoll() },
+      { text: t().SCENE.COMPLICATION_BTN, callback: () => this.handleComplicationRoll() }
+    ]);
+    this.renderButtonGroup(parent, t().DASHBOARD.GM_MOVES, [
+      { text: t().ORACLE.CMD_BEAT_MOVE, callback: () => this.execCmd("opse-roll-beat-move") },
+      { text: t().ORACLE.CMD_FAILURE_MOVE, callback: () => this.execCmd("opse-roll-failure-move") }
+    ]);
+    const helpEl = parent.createDiv({ cls: "opse-help-content opse-tab-help" });
+    helpEl.createEl("p", { text: t().HELP.SCENE_STEREOTYPE });
+    helpEl.createEl("p", { text: t().HELP.SCENE_ALTERED });
+    helpEl.createEl("p", { text: t().HELP.EVENT_TRIGGER });
+    helpEl.createEl("p", { text: t().HELP.GM_MOVES });
+  }
+  renderOracleTab(parent) {
+    this.renderButtonGroup(parent, t().ORACLE.TITLE, [
+      { text: t().ORACLE.ASK, callback: () => new OracleModal(this.app, this.plugin).open() },
+      { text: t().ORACLE.HOW_MUCH, callback: () => this.execCmd("opse-ask-how-much") }
+    ]);
+    this.renderButtonGroup(parent, t().ORACLE.FOCUS_TITLE, [
+      { text: t().ORACLE.ACTION, callback: () => this.execCmd("opse-focus-action") },
+      { text: t().ORACLE.DETAIL, callback: () => this.execCmd("opse-focus-detail") },
+      { text: t().ORACLE.THEME, callback: () => this.execCmd("opse-focus-theme") },
+      { text: t().ADVENTURE.DOUBLE_FOCUS, callback: () => this.execCmd("opse-focus-double") }
+    ]);
+  }
+  renderGeneratorsTab(parent) {
+    this.renderButtonGroup(parent, t().DASHBOARD.GENERATORS, [
+      { text: t().ADVENTURE.NPC, callback: () => this.execCmd("opse-generate-npc") },
+      { text: t().ADVENTURE.HOOK, callback: () => this.execCmd("opse-generate-hook") },
+      { text: t().ADVENTURE.GENERIC, callback: () => this.execCmd("opse-generate-generic") },
+      { text: t().ADVENTURE.PLOT_TWIST, callback: () => this.execCmd("opse-plot-twist") },
+      { text: t().ADVENTURE.FLAVOR, callback: () => this.execCmd("opse-flavor") },
+      { text: "Random Event", callback: () => this.execCmd("opse-random-event") }
+    ]);
+  }
+  renderExploreTab(parent) {
+    this.renderButtonGroup(parent, t().DASHBOARD.EXPLORATION, [
+      { text: t().DASHBOARD.DUNGEON_BTN, callback: () => this.execCmd("opse-create-dungeon") },
+      { text: t().DASHBOARD.HEX_BTN, callback: () => this.execCmd("opse-create-hex-region") },
+      { text: t().DASHBOARD.EXPLORE_BTN, callback: () => this.execCmd("opse-explore-room") }
+    ]);
+  }
+  renderSessionTab(parent) {
+    this.renderButtonGroup(parent, t().ADVENTURE.NEW, [
+      { text: t().ADVENTURE.NEW, callback: () => new AdventureModal(this.app, this.plugin).open() }
+    ]);
+    this.renderButtonGroup(parent, t().DASHBOARD.SESSION, [
+      {
+        text: t().DASHBOARD.EXPORTAR,
+        callback: async () => {
+          const success = await ExportUtils.exportSession(this.app, this.plugin);
+          new import_obsidian13.Notice(success ? t().EXPORT.SUCCESS : t().EXPORT.ERROR);
+        }
+      },
+      {
+        text: t().DASHBOARD.BARAJAR,
+        callback: () => {
+          this.plugin.deck.shuffle();
+          new import_obsidian13.Notice(t().DASHBOARD.SHUFFLE_SUCCESS);
+          this.refresh();
+        }
+      }
+    ]);
+    const mode = this.plugin.settings.randomMode;
+    if (mode !== "dice") {
+      const remaining = this.plugin.deck.getRemainingCount();
+      const total = remaining + this.plugin.deck.getDiscardCount();
+      parent.createDiv({ cls: "opse-deck-info" }).createSpan({ text: `${t().DASHBOARD.DECK_INFO} ${remaining}/${total}`, cls: "opse-muted" });
+    }
+  }
+  renderButtonGroup(parent, title, actions) {
+    const section = parent.createDiv({ cls: "opse-tab-section" });
+    section.createEl("h5", { text: title, cls: "opse-section-label" });
+    const grid = section.createDiv({ cls: "opse-control-grid" });
+    actions.forEach(({ text, callback }) => {
+      grid.createEl("button", { text }).addEventListener("click", callback);
     });
+  }
+  execCmd(id) {
+    this.app.commands.executeCommandById(`opse-oracle:${id}`);
   }
   renderEntry(parent, entry) {
     const card = parent.createDiv({ cls: `opse-history-card ${entry.pinned ? "is-pinned" : ""}` });
-    const pinBtn = card.createEl("button", { cls: `opse-pin-btn ${entry.pinned ? "is-active" : ""}`, title: entry.pinned ? t().COMMON.UNPIN : t().COMMON.PIN });
-    (0, import_obsidian11.setIcon)(pinBtn, "pin");
+    const pinBtn = card.createEl("button", {
+      cls: `opse-pin-btn ${entry.pinned ? "is-active" : ""}`,
+      title: entry.pinned ? t().COMMON.UNPIN : t().COMMON.PIN
+    });
+    (0, import_obsidian13.setIcon)(pinBtn, "pin");
     pinBtn.addEventListener("click", async () => {
       entry.pinned = !entry.pinned;
       await this.plugin.saveSettings();
@@ -1961,72 +2943,92 @@ var ControlPanelView = class extends import_obsidian11.ItemView {
     });
     const header = card.createDiv({ cls: "opse-history-header" });
     header.createSpan({ text: entry.type.toUpperCase(), cls: "opse-type-tag" });
-    header.createSpan({ text: new Date(entry.timestamp).toLocaleTimeString(), cls: "opse-timestamp" });
+    header.createSpan({ text: this.formatTimestamp(entry.timestamp), cls: "opse-timestamp" });
     if (entry.question) {
       card.createDiv({ text: entry.question, cls: "opse-history-question" });
     }
-    const content = card.createDiv({ cls: "opse-history-content" });
-    content.createEl("strong", { text: entry.answer });
+    card.createDiv({ cls: "opse-history-content" }).createEl("strong", { text: entry.answer });
     if (entry.domain) {
       card.createDiv({ text: entry.domain, cls: "opse-history-domain" });
     }
     card.createDiv({ text: entry.raw, cls: "opse-history-raw" });
     const interpretationEdit = card.createEl("input", {
       cls: "opse-interpretation-edit",
-      attr: {
-        placeholder: t().METADATA.NOTE + "...",
-        value: entry.interpretation || ""
-      }
+      attr: { placeholder: `${t().METADATA.NOTE}...`, value: entry.interpretation || "" }
     });
     interpretationEdit.addEventListener("change", async (e) => {
       entry.interpretation = e.target.value;
       await this.plugin.saveSettings();
     });
-    const actions = card.createDiv({ cls: "opse-history-actions" });
-    const copyBtn = actions.createEl("button", { cls: "opse-action-btn", title: t().COMMON.COPY });
-    (0, import_obsidian11.setIcon)(copyBtn, "copy");
+    const actionsEl = card.createDiv({ cls: "opse-history-actions" });
+    const copyBtn = actionsEl.createEl("button", { cls: "opse-action-btn", title: t().COMMON.COPY });
+    (0, import_obsidian13.setIcon)(copyBtn, "copy");
     copyBtn.createSpan({ text: t().COMMON.COPY });
     copyBtn.addEventListener("click", () => {
       const formatted = MarkdownUtils.formatResult(entry.question ? `${t().METADATA.RESULT}: ${entry.question}` : entry.type, entry.answer, entry.raw, entry.domain, entry.interpretation);
       navigator.clipboard.writeText(formatted);
-      new import_obsidian11.Notice(t().COMMON.COPIED);
+      new import_obsidian13.Notice(t().COMMON.COPIED);
     });
-    const insertBtn = actions.createEl("button", { cls: "opse-action-btn", title: t().COMMON.INSERT });
-    (0, import_obsidian11.setIcon)(insertBtn, "edit");
+    const insertBtn = actionsEl.createEl("button", { cls: "opse-action-btn", title: t().COMMON.INSERT });
+    (0, import_obsidian13.setIcon)(insertBtn, "edit");
     insertBtn.createSpan({ text: t().COMMON.INSERT });
     insertBtn.addEventListener("click", async () => {
       var _a;
       const markdown = MarkdownUtils.formatResult(entry.question ? `${entry.type}: ${entry.question}` : entry.type, entry.answer, entry.raw, entry.domain, entry.interpretation);
       await MarkdownUtils.insertAtCursor(this.app, markdown, (_a = this.plugin.adventureManager.getActiveAdventure()) == null ? void 0 : _a.activeNotePath);
     });
-    const rerollBtn = actions.createEl("button", { cls: "opse-action-btn", title: t().COMMON.REROLL });
-    (0, import_obsidian11.setIcon)(rerollBtn, "refresh-cw");
+    const rerollBtn = actionsEl.createEl("button", { cls: "opse-action-btn", title: t().COMMON.REROLL });
+    (0, import_obsidian13.setIcon)(rerollBtn, "refresh-cw");
     rerollBtn.createSpan({ text: t().COMMON.REROLL });
-    rerollBtn.addEventListener("click", () => {
-      this.handleReroll(entry);
-    });
+    rerollBtn.addEventListener("click", () => this.handleReroll(entry));
+  }
+  formatTimestamp(ts) {
+    var _a;
+    const fmt = (_a = this.plugin.settings.timestampFormat) != null ? _a : "time";
+    const date = new Date(ts);
+    if (fmt === "datetime") {
+      return date.toLocaleString([], { dateStyle: "short", timeStyle: "short" });
+    }
+    if (fmt === "relative") {
+      const diff = Date.now() - ts;
+      const mins = Math.floor(diff / 6e4);
+      if (mins < 1) {
+        return "ahora";
+      }
+      if (mins < 60) {
+        return `hace ${mins} min`;
+      }
+      const hours = Math.floor(mins / 60);
+      if (hours < 24) {
+        return `hace ${hours} h`;
+      }
+      return `hace ${Math.floor(hours / 24)} d`;
+    }
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   }
   handleReroll(entry) {
-    const commandsMap = {
-      "yesno": "opse-oracle:opse-ask-oracle",
-      "howmuch": "opse-oracle:opse-ask-how-much",
-      "focus": "opse-oracle:opse-focus-action",
-      "event": "opse-oracle:opse-random-event",
-      "move": "opse-oracle:opse-roll-beat-move",
-      "npc": "opse-oracle:opse-generate-npc",
-      "hook": "opse-oracle:opse-generate-hook"
+    const map = {
+      "yesno": "opse-ask-oracle",
+      "howmuch": "opse-ask-how-much",
+      "focus": "opse-focus-action",
+      "event": "opse-random-event",
+      "move": "opse-roll-beat-move",
+      "npc": "opse-generate-npc",
+      "hook": "opse-generate-hook",
+      "scene": "opse-set-scene",
+      "dungeon": "opse-create-dungeon",
+      "hex": "opse-create-hex-region"
     };
-    const cmdId = commandsMap[entry.type];
+    const cmdId = map[entry.type];
     if (cmdId) {
-      this.app.commands.executeCommandById(cmdId);
+      this.execCmd(cmdId);
     }
   }
   async handleCheckAlteration() {
     const roll = Random.d(6);
     const isAltered = roll >= 5;
     const result = isAltered ? t().SCENE.ALTERED_NOTICE : t().SCENE.NOT_ALTERED;
-    const meta = t().METADATA;
-    const raw = `(1d6=${roll} ${isAltered ? `>= 5` : `< 5`})`;
+    const raw = `(1d6=${roll} ${isAltered ? ">= 5" : "< 5"})`;
     await this.plugin.historyManager.addEntry({
       id: crypto.randomUUID(),
       answer: result,
@@ -2034,18 +3036,16 @@ var ControlPanelView = class extends import_obsidian11.ItemView {
       timestamp: Date.now(),
       type: "scene"
     });
-    const markdown = MarkdownUtils.formatResult(t().SCENE.CHECK_ALTERATION, result, raw);
-    await MarkdownUtils.smartInsert(this.app, this.plugin, markdown);
+    await MarkdownUtils.smartInsert(this.app, this.plugin, MarkdownUtils.formatResult(t().SCENE.CHECK_ALTERATION, result, raw));
     this.refresh();
     if (isAltered) {
-      new import_obsidian11.Notice(result);
+      new import_obsidian13.Notice(result);
     }
   }
   async handleAlteredRoll() {
     const roll = Random.d(6);
     const result = OPSE.getAltered(roll);
-    const meta = t().METADATA;
-    const raw = `(1d6=${roll} [${meta.RESULT}])`;
+    const raw = `(1d6=${roll} [${t().METADATA.RESULT}])`;
     await this.plugin.historyManager.addEntry({
       id: crypto.randomUUID(),
       answer: result,
@@ -2053,15 +3053,13 @@ var ControlPanelView = class extends import_obsidian11.ItemView {
       timestamp: Date.now(),
       type: "scene"
     });
-    const markdown = MarkdownUtils.formatResult(t().SCENE.ALTERED_ONLY, result, raw);
-    await MarkdownUtils.smartInsert(this.app, this.plugin, markdown);
+    await MarkdownUtils.smartInsert(this.app, this.plugin, MarkdownUtils.formatResult(t().SCENE.ALTERED_ONLY, result, raw));
     this.refresh();
   }
   async handleComplicationRoll() {
     const roll = Random.d(6);
     const result = OPSE.getComplication(roll - 1);
-    const meta = t().METADATA;
-    const raw = `(1d6=${roll} [${meta.COMPLICATION}])`;
+    const raw = `(1d6=${roll} [${t().METADATA.COMPLICATION}])`;
     await this.plugin.historyManager.addEntry({
       id: crypto.randomUUID(),
       answer: result,
@@ -2069,92 +3067,54 @@ var ControlPanelView = class extends import_obsidian11.ItemView {
       timestamp: Date.now(),
       type: "scene"
     });
-    const markdown = MarkdownUtils.formatResult(t().SCENE.COMPLICATION_BTN, result, raw);
-    await MarkdownUtils.smartInsert(this.app, this.plugin, markdown);
+    await MarkdownUtils.smartInsert(this.app, this.plugin, MarkdownUtils.formatResult(t().SCENE.COMPLICATION_BTN, result, raw));
     this.refresh();
   }
-  async handleDirectOracle(likelihood) {
-    const strings = t().ORACLE;
-    const roll = Random.roll2d6();
-    const { answer, modifier } = OPSE.resolveYesNo(roll.d1, roll.d2, likelihood);
-    let content = `${answer}${modifier ? ` ${modifier}` : ""}`;
-    let raw = `(d1=${roll.d1} [Respuesta], d2=${roll.d2} [Mod], Prob: ${likelihood})`;
-    await this.plugin.historyManager.addEntry({
-      id: crypto.randomUUID(),
-      answer: content,
-      raw,
-      timestamp: Date.now(),
-      type: "yesno"
+  attachResizeHandler(handle, tabContent) {
+    let dragging = false;
+    let startY = 0;
+    let startHeight = 0;
+    const onMouseMove = (e) => {
+      var _a, _b;
+      if (!dragging) {
+        return;
+      }
+      const delta = e.clientY - startY;
+      const newHeight = Math.max(MIN_TAB_HEIGHT, startHeight + delta);
+      const rootHeight = (_b = (_a = handle.closest(".opse-unified-root")) == null ? void 0 : _a.getBoundingClientRect().height) != null ? _b : 600;
+      const clamped = Math.min(newHeight, rootHeight - MIN_HISTORY_HEIGHT - 40);
+      tabContent.style.height = `${clamped}px`;
+    };
+    const onMouseUp = async () => {
+      if (!dragging) {
+        return;
+      }
+      dragging = false;
+      handle.classList.remove("is-dragging");
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+      const newHeight = parseInt(tabContent.style.height, 10);
+      if (!isNaN(newHeight)) {
+        this.plugin.settings.tabContentHeight = newHeight;
+        await this.plugin.saveSettings();
+      }
+    };
+    handle.addEventListener("mousedown", (e) => {
+      dragging = true;
+      startY = e.clientY;
+      startHeight = tabContent.getBoundingClientRect().height;
+      handle.classList.add("is-dragging");
+      e.preventDefault();
+      document.addEventListener("mousemove", onMouseMove);
+      document.addEventListener("mouseup", onMouseUp);
     });
-    const markdown = MarkdownUtils.formatResult(t().ORACLE.YESNO_TITLE, content, raw);
-    await MarkdownUtils.smartInsert(this.app, this.plugin, markdown);
-    this.refresh();
   }
   async onClose() {
   }
 };
 
-// src/core/deck.ts
-var Deck = class {
-  constructor(useJokers = false) {
-    __publicField(this, "cards", []);
-    __publicField(this, "discard", []);
-    __publicField(this, "useJokers", false);
-    this.useJokers = useJokers;
-    this.reset();
-  }
-  reset() {
-    this.cards = [];
-    this.discard = [];
-    const suits = ["Hearts" /* Hearts */, "Diamonds" /* Diamonds */, "Clubs" /* Clubs */, "Spades" /* Spades */];
-    const ranks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-    for (const suit of suits) {
-      for (let i = 0; i < ranks.length; i++) {
-        this.cards.push({
-          rank: ranks[i],
-          suit,
-          value: i + 1
-        });
-      }
-    }
-    if (this.useJokers) {
-      this.cards.push({ rank: "Joker", suit: "Joker" /* Joker */, value: 0 });
-      this.cards.push({ rank: "Joker", suit: "Joker" /* Joker */, value: 0 });
-    }
-    this.shuffle();
-  }
-  shuffle() {
-    for (let i = this.cards.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [this.cards[i], this.cards[j]] = [this.cards[j], this.cards[i]];
-    }
-  }
-  draw() {
-    if (this.cards.length === 0) {
-      this.cards = [...this.discard];
-      this.discard = [];
-      this.shuffle();
-    }
-    if (this.cards.length === 0) {
-      this.reset();
-    }
-    const card = this.cards.pop();
-    this.discard.push(card);
-    if (card.suit === "Joker" /* Joker */) {
-      this.reset();
-    }
-    return card;
-  }
-  getRemainingCount() {
-    return this.cards.length;
-  }
-  getDiscardCount() {
-    return this.discard.length;
-  }
-};
-
 // src/main.ts
-var OPSEOraclePlugin = class extends import_obsidian12.Plugin {
+var OPSEOraclePlugin = class extends import_obsidian14.Plugin {
   constructor() {
     super(...arguments);
     __publicField(this, "settings");
@@ -2165,14 +3125,17 @@ var OPSEOraclePlugin = class extends import_obsidian12.Plugin {
   async onload() {
     await this.loadSettings();
     I18n.setLanguage(this.settings.language);
+    this.applyAccentColor(this.settings.accentColor);
     this.addRibbonIcon("dice", "OPSE Control", () => {
       this.activateView(VIEW_TYPE_OPSE_CONTROL);
     });
-    this.deck = new Deck();
-    if (this.settings.randomMode === "persistent_deck") {
+    const useJokers = this.settings.randomMode !== "dice";
+    this.deck = new Deck(useJokers);
+    if (this.settings.randomMode === "persistent_deck" && this.settings.deckCards && this.settings.deckCards.length > 0) {
+      this.deck.setState(this.settings.deckCards, this.settings.deckDiscard || []);
     }
     this.adventureManager = new AdventureStateManager(this.settings, async (s) => await this.saveSettings(s));
-    this.historyManager = new HistoryManager(this.settings.history, 100, async (h) => {
+    this.historyManager = new HistoryManager(this.settings.history, this.settings.historyMaxEntries, async (h) => {
       this.settings.history = h;
       await this.saveSettings();
       this.refreshViews();
@@ -2223,18 +3186,24 @@ var OPSEOraclePlugin = class extends import_obsidian12.Plugin {
       leaf = leaves[0];
     } else {
       leaf = workspace.getRightLeaf(false);
-      await leaf.setViewState({ type, active: true });
+      if (leaf) {
+        await leaf.setViewState({ type, active: true });
+      }
     }
-    workspace.revealLeaf(leaf);
+    if (leaf) {
+      workspace.revealLeaf(leaf);
+    }
   }
   refreshViews() {
     this.app.workspace.getLeavesOfType(VIEW_TYPE_OPSE_EXPLORATION).forEach((leaf) => {
-      if (leaf.view instanceof ExplorationView)
+      if (leaf.view instanceof ExplorationView) {
         leaf.view.refresh();
+      }
     });
     this.app.workspace.getLeavesOfType(VIEW_TYPE_OPSE_CONTROL).forEach((leaf) => {
-      if (leaf.view instanceof ControlPanelView)
+      if (leaf.view instanceof ControlPanelView) {
         leaf.view.refresh();
+      }
     });
   }
   onunload() {
@@ -2242,10 +3211,77 @@ var OPSEOraclePlugin = class extends import_obsidian12.Plugin {
   }
   async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    if (!this.settings.dungeons) {
+      this.settings.dungeons = {};
+    }
+    if (!this.settings.regions) {
+      this.settings.regions = {};
+    }
+    if (!this.settings.historyMaxEntries) {
+      this.settings.historyMaxEntries = 100;
+    }
+    if (this.settings.deckCards === void 0) {
+      this.settings.deckCards = null;
+    }
+    if (this.settings.deckDiscard === void 0) {
+      this.settings.deckDiscard = null;
+    }
+    if (!this.settings.tabContentHeight) {
+      this.settings.tabContentHeight = 260;
+    }
+    if (!this.settings.defaultTab) {
+      this.settings.defaultTab = "oracle";
+    }
+    if (this.settings.compactHistory === void 0) {
+      this.settings.compactHistory = false;
+    }
+    if (!this.settings.accentColor) {
+      this.settings.accentColor = "#8b5cf6";
+    }
+    if (!this.settings.historyOrder) {
+      this.settings.historyOrder = "newest";
+    }
+    if (!this.settings.timestampFormat) {
+      this.settings.timestampFormat = "time";
+    }
+    if (!this.settings.insertFormat) {
+      this.settings.insertFormat = "plain";
+    }
+    if (this.settings.showRawRolls === void 0) {
+      this.settings.showRawRolls = true;
+    }
+    if (this.settings.showDomain === void 0) {
+      this.settings.showDomain = true;
+    }
+    if (!this.settings.defaultLikelihood) {
+      this.settings.defaultLikelihood = "even";
+    }
+    if (!this.settings.hexEventThreshold) {
+      this.settings.hexEventThreshold = 5;
+    }
+    if (!this.settings.exportFormat) {
+      this.settings.exportFormat = "markdown";
+    }
+    if (this.settings.resetDeckOnAdventureChange === void 0) {
+      this.settings.resetDeckOnAdventureChange = false;
+    }
+    if (this.settings.autoOpenExploration === void 0) {
+      this.settings.autoOpenExploration = true;
+    }
+  }
+  applyAccentColor(color) {
+    document.documentElement.style.setProperty("--opse-accent", color);
+    document.documentElement.style.setProperty("--opse-accent-soft", `${color}1a`);
   }
   async saveSettings(settings) {
-    if (settings)
+    if (settings) {
       this.settings = settings;
+    }
+    if (this.settings.randomMode === "persistent_deck" && this.deck) {
+      const state = this.deck.getState();
+      this.settings.deckCards = state.cards;
+      this.settings.deckDiscard = state.discard;
+    }
     await this.saveData(this.settings);
   }
 };

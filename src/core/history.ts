@@ -1,4 +1,4 @@
-import { HistoryEntry } from "../types";
+import { HistoryEntry } from '../types';
 
 /**
  * Management of history entries
@@ -6,7 +6,7 @@ import { HistoryEntry } from "../types";
 
 export class HistoryManager {
     private history: HistoryEntry[] = [];
-    private maxEntries: number = 100;
+    private maxEntries = 100;
     private saveCallback: (history: HistoryEntry[]) => Promise<void>;
 
     constructor(history: HistoryEntry[], maxEntries: number, saveCallback: (history: HistoryEntry[]) => Promise<void>) {
@@ -22,7 +22,7 @@ export class HistoryManager {
     }
 
     private cleanup() {
-        if (this.history.length <= this.maxEntries) return;
+        if (this.history.length <= this.maxEntries) {return;}
 
         // Keep all pinned entries, and only as many unpinned as fit the limit
         const pinned = this.history.filter(e => e.pinned);

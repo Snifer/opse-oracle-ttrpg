@@ -1,15 +1,15 @@
-import { App, Modal, Setting, normalizePath, TFile } from 'obsidian';
+import { App, Modal, Setting, normalizePath } from 'obsidian';
 import OPSEOraclePlugin from '../../main';
-import { MarkdownUtils } from '../../utils/markdown';
 import { t } from '../../i18n/i18n';
+import { Deck } from '../../core/deck';
 
 export class AdventureModal extends Modal {
     plugin: OPSEOraclePlugin;
-    title: string = "";
-    system: string = "...";
-    genre: string = "...";
-    protagonists: string = "";
-    startingPrompt: string = "";
+    title = '';
+    system = '...';
+    genre = '...';
+    protagonists = '';
+    startingPrompt = '';
 
     constructor(app: App, plugin: OPSEOraclePlugin) {
         super(app);
@@ -65,7 +65,7 @@ export class AdventureModal extends Modal {
         }
 
         // Construct YAML and Initial Content
-        let content = `---
+        const content = `---
 opse-adventure: true
 title: "${this.title || defaultTitle}"
 system: "${this.system}"
@@ -76,12 +76,12 @@ created: ${new Date().toISOString()}
 # ${this.title || defaultTitle}
 
 **${strings.SYSTEM}:** ${this.system} | **${strings.GENRE}:** ${this.genre}
-${this.protagonists ? `**${strings.PROTAGONISTS}:** ${this.protagonists}\n` : ""}
+${this.protagonists ? `**${strings.PROTAGONISTS}:** ${this.protagonists}\n` : ''}
 
 ---
 
 ${strings.NOTE_HEADER}
-${this.startingPrompt || "..."}
+${this.startingPrompt || '...'}
 
 ${strings.SCENE_HEADER}
 
@@ -90,7 +90,10 @@ ${strings.SCENE_HEADER}
         // Create the file
         const newFile = await this.app.vault.create(finalPath, content);
 
-        // Register in Adventure Manager
+        if (this.plugin.settings.resetDeckOnAdventureChange) {
+            this.plugin.deck = new Deck(this.plugin.settings.randomMode !== 'dice');
+        }
+
         await this.plugin.adventureManager.createAdventure(
             this.title || defaultTitle,
             this.system,
@@ -98,7 +101,6 @@ ${strings.SCENE_HEADER}
             newFile.path
         );
 
-        // Open the new file
         const leaf = this.app.workspace.getLeaf(false);
         await leaf.openFile(newFile);
     }

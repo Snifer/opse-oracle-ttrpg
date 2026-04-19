@@ -7,8 +7,8 @@ import { t } from '../../i18n/i18n';
 
 export class SceneModal extends Modal {
     plugin: OPSEOraclePlugin;
-    objective: string = "";
-    location: string = "";
+    objective = '';
+    location = '';
 
     constructor(app: App, plugin: OPSEOraclePlugin) {
         super(app);
@@ -44,14 +44,14 @@ export class SceneModal extends Modal {
         const complicationRoll = Random.d(6);
         const complication = OPSE.getComplication(complicationRoll - 1);
 
-        let title = `${strings.NEW}: ${this.objective || "..."}`;
-        let content = `**${strings.LOCATION}:** ${this.location || "..."}
-**${strings.OBJECTIVE}:** ${this.objective || "..."}
+        const title = `${strings.NEW}: ${this.objective || '...'}`;
+        const content = `**${strings.LOCATION}:** ${this.location || '...'}
+**${strings.OBJECTIVE}:** ${this.objective || '...'}
 
 **${strings.COMPLICATION}:** ${complication}`;
 
         const meta = t().METADATA;
-        let raw = `(1d6=${complicationRoll} [${meta.COMPLICATION}])`;
+        const raw = `(1d6=${complicationRoll} [${meta.COMPLICATION}])`;
 
         await this.plugin.historyManager.addEntry({
             id: crypto.randomUUID(),

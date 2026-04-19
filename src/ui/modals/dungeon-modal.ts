@@ -1,14 +1,15 @@
-import { App, Modal, Setting } from 'obsidian';
+import { App, Modal, Notice, Setting } from 'obsidian';
 import OPSEOraclePlugin from '../../main';
 import { DungeonManager } from '../../core/dungeon';
 import { MarkdownUtils } from '../../utils/markdown';
 import { t } from '../../i18n/i18n';
+import { VIEW_TYPE_OPSE_EXPLORATION } from '../exploration-view';
 
 export class DungeonModal extends Modal {
     plugin: OPSEOraclePlugin;
-    name: string = "Mazmorra";
-    appearance: string = "...";
-    function: string = "...";
+    name = 'Mazmorra';
+    appearance = '';
+    func = '';
 
     constructor(app: App, plugin: OPSEOraclePlugin) {
         super(app);
@@ -17,19 +18,29 @@ export class DungeonModal extends Modal {
 
     onOpen() {
         const { contentEl } = this;
-        contentEl.createEl('h2', { text: "Dungeon tracker" });
+        const strings = t().EXPLORATION;
+        contentEl.createEl('h2', { text: strings.DUNGEON_TITLE });
 
         new Setting(contentEl)
             .setName(t().ADVENTURE.TITLE)
-            .addText(text => text.setValue(this.name).onChange(value => this.name = value));
+            .addText(text => text
+                .setPlaceholder('Nombre de la mazmorra')
+                .setValue(this.name)
+                .onChange(value => this.name = value));
 
         new Setting(contentEl)
-            .setName("Appearance / theme")
-            .addText(text => text.setValue(this.appearance).onChange(value => this.appearance = value));
+            .setName(strings.APPEARANCE)
+            .addText(text => text
+                .setPlaceholder('Ej: Húmeda, oscura, piedra antigua')
+                .setValue(this.appearance)
+                .onChange(value => this.appearance = value));
 
         new Setting(contentEl)
-            .setName("Function / purpose")
-            .addText(text => text.setValue(this.function).onChange(value => this.function = value));
+            .setName(strings.FUNCTION)
+            .addText(text => text
+                .setPlaceholder('Ej: Tumba, cuartel, templo')
+                .setValue(this.func)
+                .onChange(value => this.func = value));
 
         new Setting(contentEl)
             .addButton(btn => btn
@@ -41,23 +52,44 @@ export class DungeonModal extends Modal {
                 }));
     }
 
-    startDungeon() {
-        const dungeon = DungeonManager.createDungeon(this.name, this.appearance, this.function);
+    async startDungeon() {
+        const dungeon = DungeonManager.createDungeon(
+            this.name,
+            this.appearance || 'Sin descripción',
+            this.func || 'Sin descripción'
+        );
         const firstRoom = dungeon.rooms[dungeon.currentRoomId!];
 
-        let title = `Dungeon: ${this.name}`;
-        let content = `**Theme:** ${this.appearance} (${this.function})\n\n`;
-        content += `**Entrance:** ${firstRoom.location}\n`;
-        content += `**Encounter:** ${firstRoom.encounter}\n`;
-        content += `**Object:** ${firstRoom.object}\n`;
-        content += `**Exits:** ${firstRoom.exits}`;
+        // Persist dungeon to settings
+        this.plugin.settings.dungeons[dungeon.id] = dungeon;
 
-        const markdown = MarkdownUtils.formatResult(title, content, "(Start of dungeon crawl)");
-        MarkdownUtils.insertAtCursor(this.app, markdown);
+        // Link to active adventure if one exists
+        const active = this.plugin.adventureManager.getActiveAdventure();
+        if (active) {
+            active.dungeonId = dungeon.id;
+            await this.plugin.adventureManager.linkDungeon(active.activeNotePath, dungeon.id);
+        }
+
+        await this.plugin.saveSettings();
+        new Notice(t().COMMON.DUNGEON_CREATED);
+
+        // Insert summary into active note
+        let content = `**Tema:** ${dungeon.themeAppearance} (${dungeon.themeFunction})\n\n`;
+        content += `**Entrada:** ${firstRoom.location}\n`;
+        content += `**Encuentro:** ${firstRoom.encounter}\n`;
+        content += `**Objeto:** ${firstRoom.object}\n`;
+        content += `**Salidas:** ${firstRoom.exits}`;
+
+        const markdown = MarkdownUtils.formatResult(`Dungeon: ${this.name}`, content, '(Inicio de la mazmorra)');
+        await MarkdownUtils.smartInsert(this.app, this.plugin, markdown);
+
+        if (this.plugin.settings.autoOpenExploration) {
+            await this.plugin.activateView(VIEW_TYPE_OPSE_EXPLORATION);
+        }
+        this.plugin.refreshViews();
     }
 
     onClose() {
-        const { contentEl } = this;
-        contentEl.empty();
+        this.contentEl.empty();
     }
 }
