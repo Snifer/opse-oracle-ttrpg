@@ -7,26 +7,9 @@
 [![Version](https://img.shields.io/badge/version-1.0.0-8b5cf6?style=flat-square)](https://github.com/snifer/OPSE-oracle-ttrpg)
 [![Obsidian](https://img.shields.io/badge/Obsidian-0.15.0+-8b5cf6?style=flat-square)](https://obsidian.md)
 [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
+![GitHub Downloads](https://img.shields.io/github/downloads/Snifer/opse-oracle-ttrpg/total?logo)
 [![OPSE](https://img.shields.io/badge/OPSE-v1.6-orange?style=flat-square)](https://inflatablestudios.itch.io/)
-
----
-
-## Contenido
-
-- [Características](#características)
-- [Instalación](#instalación)
-- [Inicio rápido](#inicio-rápido)
-- [Panel de control](#panel-de-control)
-- [Sistema de oráculos](#sistema-de-oráculos)
-- [Generadores](#generadores)
-- [Exploración](#exploración)
-- [Historial](#historial)
-- [Configuración](#configuración)
-- [Referencia de comandos](#referencia-de-comandos)
-- [Arquitectura técnica](#arquitectura-técnica)
-- [Referencia de tablas OPSE v1.6](#referencia-de-tablas-opse-v16)
-- [Atribución y licencia](#atribución-y-licencia)
-
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Buy%20me%20a%20coffee-ff5f5f?logo=ko-fi&logoColor=white)](https://ko-fi.com/bastiondeldino)
 ---
 
 ## Características
