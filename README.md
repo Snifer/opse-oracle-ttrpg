@@ -2,7 +2,7 @@
 
 > Un motor de juego de rol en solitario integrado directamente en tu vault de Obsidian.
 >
-> > Esta es la versión en español de la documentación. Para la versión en inglés, consulta [`README-en.md`](./README-en.md).
+> > EThis is the Spanish version of the documentation. For the English version, see -> [`README-en.md`](./README-en.md).
 
 **OPSE Oracle** es un plugin para [Obsidian](https://obsidian.md) que implementa el sistema completo de **One Page Solo Engine v1.6** — el motor minimalista todo-en-uno para jugar cualquier TTRPG sin Director de Juego. Automatiza tiradas, consultas al oráculo, generación de contenido y rastreo de exploración, dejando al jugador libre para interpretar e improvisar.
 
